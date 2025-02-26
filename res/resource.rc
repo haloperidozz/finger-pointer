@@ -7,7 +7,7 @@ IDR_EFFECT_WAV  WAVE                "effect.wav"
 
 STRINGTABLE
 BEGIN
-    IDS_GITHUB_URL,     "https://github.com/haloperidozz"
+    IDS_GITHUB_URL, "https://github.com/haloperidozz/finger-pointer"
 END
 
 IDM_MENU_MAIN MENU 
