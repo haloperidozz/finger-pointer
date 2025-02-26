@@ -1,0 +1,21 @@
+#include "resource.h"
+
+IDI_ICON        ICON DISCARDABLE    "icon.ico"
+
+IDR_POINTER_PNG RCDATA              "pointer.png"
+IDR_EFFECT_WAV  WAVE                "effect.wav"
+
+STRINGTABLE
+BEGIN
+    IDS_GITHUB_URL,     "https://github.com/haloperidozz"
+END
+
+IDM_MENU_MAIN MENU 
+BEGIN 
+    POPUP "ContextMenu"
+    BEGIN 
+        MENUITEM "Show [ALT + H]",  IDM_ITEM_SHOW
+        MENUITEM "Source Code",     IDM_ITEM_SOURCE_CODE 
+        MENUITEM "Exit",            IDM_ITEM_EXIT
+    END 
+END 
