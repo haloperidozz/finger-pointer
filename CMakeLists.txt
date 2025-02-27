@@ -38,6 +38,7 @@ target_link_libraries(FingerPointer
 
 if(MINGW)
     target_compile_options(FingerPointer PRIVATE -municode)
+    set_target_properties(FingerPointer PROPERTIES LINK_FLAGS_RELEASE -s)
 
     target_link_options(FingerPointer
         PRIVATE
