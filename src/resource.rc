@@ -1,9 +1,9 @@
 #include "resource.h"
 
-IDI_ICON        ICON DISCARDABLE    "icon.ico"
+IDI_ICON        ICON DISCARDABLE    "../res/icon.ico"
 
-IDR_POINTER_PNG RCDATA              "pointer.png"
-IDR_EFFECT_WAV  WAVE                "effect.wav"
+IDR_POINTER_PNG RCDATA              "../res/pointer.png"
+IDR_EFFECT_WAV  WAVE                "../res/effect.wav"
 
 STRINGTABLE
 BEGIN
