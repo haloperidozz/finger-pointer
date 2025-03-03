@@ -21,10 +21,10 @@
 #include <tchar.h>
 
 #include "sprite.h"
-#include "trayicon.h"
 #include "tweener.h"
 #include "timer.h"
 
+#include "helper.h"
 #include "resource.h"
 
 #define FINGERPOINTER_CLASSNAME TEXT("FingerPointerClass")
@@ -32,34 +32,21 @@
 #define UM_TRAYICON             (WM_USER + 1)
 
 typedef struct _FINGERPOINTER {
-    HWND hWnd;
-    HINSTANCE hInstance;
+    HWND                    hWnd;
+    HINSTANCE               hInstance;
 
-    ID2D1Factory          *pFactory;
-    ID2D1HwndRenderTarget *pRenderTarget;
+    ID2D1Factory           *pFactory;
+    ID2D1HwndRenderTarget  *pRenderTarget;
 
-    SPRITE                 spritePointer;
-    TRAYICON               trayicon;
-    TWEENER                tweener;
-    TIMER                  timer;
+    PSPRITE                 pSprite;
+    PTWEENER                pTweener;
+    PTIMER                  pTimer;
 
-    BOOL                   bInitialized;
-    BOOL                   bShow;
+    NOTIFYICONDATA          nid;
+
+    BOOL                    bInitialized;
+    BOOL                    bShow;
 } FINGERPOINTER, *PFINGERPOINTER;
-
-/***********************************************************************
- * Misc
- ***********************************************************************/
-
-/* https://easings.net/#easeOutCirc */
-static FLOAT EaseOutCircEasing(FLOAT x)
-{
-    return sqrtf(1 - powf(x - 1, 2));
-}
-
-/***********************************************************************
- * Common
- ***********************************************************************/
 
 static VOID FingerPointer_ToggleWindow(PFINGERPOINTER pFingerPointer)
 {
@@ -85,8 +72,6 @@ static VOID FingerPointer_ToggleWindow(PFINGERPOINTER pFingerPointer)
 
 static VOID FingerPointer_Render(PFINGERPOINTER pFingerPointer)
 {
-    ID2D1RenderTarget *pRenderTarget = NULL;
-
     if (pFingerPointer == NULL || pFingerPointer->bInitialized == FALSE) {
         return;
     }
@@ -94,10 +79,8 @@ static VOID FingerPointer_Render(PFINGERPOINTER pFingerPointer)
     ID2D1HwndRenderTarget_BeginDraw(pFingerPointer->pRenderTarget);
 
     ID2D1HwndRenderTarget_Clear(pFingerPointer->pRenderTarget, 0);
-    ID2D1HwndRenderTarget_QueryInterface(pFingerPointer->pRenderTarget,
-        &IID_ID2D1RenderTarget, (LPVOID*) &pRenderTarget);
-    
-    Sprite_Draw(pFingerPointer->spritePointer, pRenderTarget);
+
+    Sprite_DrawHwnd(pFingerPointer->pSprite, pFingerPointer->pRenderTarget);
     
     ID2D1HwndRenderTarget_EndDraw(pFingerPointer->pRenderTarget, NULL, NULL);
 }
@@ -110,10 +93,9 @@ static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
         return;
     }
 
-    if (Tweener_Update(pFingerPointer->tweener, fDelta)) {
-        
-        fAngle = Tweener_GetValue(pFingerPointer->tweener);
-        Sprite_SetRotation(pFingerPointer->spritePointer, fAngle);
+    if (Tweener_Update(pFingerPointer->pTweener, fDelta)) {
+        fAngle = Tweener_GetValue(pFingerPointer->pTweener);
+        Sprite_SetRotation(pFingerPointer->pSprite, fAngle);
     }
 }
 
@@ -121,10 +103,41 @@ static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
  * Events
  ***********************************************************************/
 
+static LRESULT FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer,
+                                        WPARAM wParam, LPARAM lParam)
+{
+    HMENU hMenu = NULL;
+    POINT pt;
+
+    hMenu = LoadMenu(
+        pFingerPointer->hInstance, MAKEINTRESOURCE(IDM_MENU_MAIN));
+    
+    hMenu = GetSubMenu(hMenu, 0);
+
+    switch (lParam) {
+        case WM_RBUTTONUP: {
+            GetCursorPos(&pt);
+
+            TrackPopupMenuEx(
+                hMenu, TPM_RIGHTBUTTON, pt.x, pt.y,
+                pFingerPointer->hWnd, NULL);
+            
+            break;
+        }
+        
+        case WM_LBUTTONUP: {
+            FingerPointer_ToggleWindow(pFingerPointer);
+            break;
+        }
+    }
+
+    return 0;
+}
+
 static LRESULT
 FingerPointer_OnLeftMouseButton(PFINGERPOINTER pFingerPointer, BOOL bPress)
 {
-    Tweener_Invert(pFingerPointer->tweener, bPress);
+    Tweener_Invert(pFingerPointer->pTweener, bPress);
 
     if (bPress == FALSE) {
         PlaySound(NULL, NULL, 0);
@@ -151,36 +164,33 @@ static LRESULT FingerPointer_OnMouseMove(PFINGERPOINTER pFingerPointer,
 {
     D2D1_POINT_2F position, center;
 
-    center = Sprite_GetCenterPoint(pFingerPointer->spritePointer);
+    center = Sprite_GetCenterPoint(pFingerPointer->pSprite);
 
     position.x = ((FLOAT) x) - center.x;
     position.y = ((FLOAT) y) - center.y;
 
-    Sprite_SetPosition(pFingerPointer->spritePointer, position);
+    Sprite_SetPosition(pFingerPointer->pSprite, position);
 
     return 0;
 }
 
 static LRESULT FingerPointer_OnDestroy(PFINGERPOINTER pFingerPointer)
 {
-    if (pFingerPointer->timer != NULL) {
-        Timer_Destroy(pFingerPointer->timer);
-        pFingerPointer->timer = NULL;
+    Shell_NotifyIcon(NIM_DELETE, &(pFingerPointer->nid));
+
+    if (pFingerPointer->pTimer != NULL) {
+        Timer_Destroy(pFingerPointer->pTimer);
+        pFingerPointer->pTimer = NULL;
     }
 
-    if (pFingerPointer->tweener != NULL) {
-        Tweener_Destroy(pFingerPointer->tweener);
-        pFingerPointer->tweener = NULL;
+    if (pFingerPointer->pTweener != NULL) {
+        Tweener_Destroy(pFingerPointer->pTweener);
+        pFingerPointer->pTweener = NULL;
     }
 
-    if (pFingerPointer->trayicon != NULL) {
-        TrayIcon_Destroy(pFingerPointer->trayicon);
-        pFingerPointer->trayicon = NULL;
-    }
-
-    if (pFingerPointer->spritePointer != NULL) {
-        Sprite_Destroy(pFingerPointer->spritePointer);
-        pFingerPointer->spritePointer = NULL;
+    if (pFingerPointer->pSprite != NULL) {
+        Sprite_Destroy(pFingerPointer->pSprite);
+        pFingerPointer->pSprite = NULL;
     }
 
     if (pFingerPointer->pRenderTarget != NULL) {
@@ -272,52 +282,51 @@ static LRESULT FingerPointer_OnCreate(PFINGERPOINTER pFingerPointer)
         return -1;
     }
 
-    pFingerPointer->spritePointer = Sprite_LoadFromResource(
+    pFingerPointer->pSprite = Sprite_CreateFromResource(
         pFingerPointer->pRenderTarget,
         MAKEINTRESOURCE(IDR_POINTER_PNG), RT_RCDATA);
 
-    if (pFingerPointer->spritePointer == NULL) {
+    if (pFingerPointer->pSprite == NULL) {
         FingerPointer_OnDestroy(pFingerPointer);
         return -1;
     }
 
-    pFingerPointer->trayicon = TrayIcon_Create(
-        pFingerPointer->hWnd, UM_TRAYICON,
-        (TRAYICONCALLBACK) FingerPointer_ToggleWindow, pFingerPointer);
+    pFingerPointer->pTweener = Tweener_Create(0.25f, -45.0f, 0);
 
-    if (pFingerPointer->trayicon == NULL) {
+    if (pFingerPointer->pTweener == NULL) {
         FingerPointer_OnDestroy(pFingerPointer);
         return -1;
     }
 
-    hMenu = LoadMenu(
-        pFingerPointer->hInstance, MAKEINTRESOURCE(IDM_MENU_MAIN));
-    
-    if (hMenu == NULL) {
-        FingerPointer_OnDestroy(pFingerPointer);
-        return -1;
-    }
+    Tweener_SetEasing(pFingerPointer->pTweener, Easing_EaseOutCirc);
 
-    TrayIcon_AttachMenu(pFingerPointer->trayicon, GetSubMenu(hMenu, 0));
+    pFingerPointer->pTimer = Timer_Create();
 
-    pFingerPointer->tweener = Tweener_Create(0.25f, -45.0f, 0);
-
-    if (pFingerPointer->tweener == NULL) {
-        FingerPointer_OnDestroy(pFingerPointer);
-        return -1;
-    }
-
-    Tweener_SetEasing(pFingerPointer->tweener, EaseOutCircEasing);
-
-    pFingerPointer->timer = Timer_Create();
-
-    if (pFingerPointer->timer == NULL) {
+    if (pFingerPointer->pTimer == NULL) {
         FingerPointer_OnDestroy(pFingerPointer);
         return -1;
     }
 
     /* ALT + H */
     RegisterHotKey(pFingerPointer->hWnd, 1, MOD_ALT | MOD_NOREPEAT, 0x48);
+
+    ZeroMemory(&(pFingerPointer->nid), sizeof(NOTIFYICONDATA));
+
+    pFingerPointer->nid.cbSize           = sizeof(NOTIFYICONDATA);
+    pFingerPointer->nid.hWnd             = pFingerPointer->hWnd;
+    pFingerPointer->nid.uID              = 1;
+    pFingerPointer->nid.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+    pFingerPointer->nid.uCallbackMessage = UM_TRAYICON;
+
+    GetWindowText(pFingerPointer->hWnd, pFingerPointer->nid.szTip, 128);
+
+    pFingerPointer->nid.hIcon = (HICON) GetClassLongPtr(
+        pFingerPointer->hWnd, GCLP_HICON);
+    
+    if (Shell_NotifyIcon(NIM_ADD, &(pFingerPointer->nid)) == FALSE) {
+        FingerPointer_OnDestroy(pFingerPointer);
+        return -1;
+    }
 
     pFingerPointer->bShow = FALSE;
     pFingerPointer->bInitialized = TRUE;
@@ -351,16 +360,10 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
             hWnd, GWLP_USERDATA);
     }
 
-    if (pFingerPointer != NULL) {
-        bResult = TrayIcon_HandleMessage(pFingerPointer->trayicon,
-                                         uMsg, lParam);
-
-        if (bResult == TRUE) {
-            return 0;
-        }
-    }
-
     switch (uMsg) {
+        case UM_TRAYICON:
+            return FingerPointer_OnTrayIcon(pFingerPointer, wParam, lParam);
+
         case WM_MOUSEMOVE: {
             x = GET_X_LPARAM(lParam);
             y = GET_Y_LPARAM(lParam);
@@ -467,9 +470,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
             if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
                 DispatchMessage(&msg);
             } else {
-                Timer_Tick(pFingerPointer->timer);
+                Timer_Tick(pFingerPointer->pTimer);
     
-                fDelta = Timer_GetDeltaTime(pFingerPointer->timer);
+                fDelta = Timer_GetDeltaTime(pFingerPointer->pTimer);
 
                 FingerPointer_Update(pFingerPointer, fDelta);
                 FingerPointer_Render(pFingerPointer);
