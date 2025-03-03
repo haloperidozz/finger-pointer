@@ -16,120 +16,101 @@
 
 #include "tweener.h"
 
-#include <math.h>
+#include "helper.h"
 
 struct _TWEENER {
-    FLOAT  fDuration;
-    FLOAT  fStart;
-    FLOAT  fTarget;
-    FLOAT  fProgress;
-    FLOAT  fValue;
-    BOOL   bInverted;
-    EASING fnEasing;
+    FLOAT       fDuration;
+    FLOAT       fStart;
+    FLOAT       fTarget;
+    FLOAT       fProgress;
+    FLOAT       fValue;
+    BOOL        bInverted;
+    PFNEASING   pfnEasing;
 };
 
-static FLOAT LinearEasing(FLOAT x)
+PTWEENER Tweener_Create(FLOAT fDuration, FLOAT fStart, FLOAT fTarget)
 {
-    return x;
-}
-
-TWEENER Tweener_Create(FLOAT fDuration, FLOAT fStart, FLOAT fTarget)
-{
-    TWEENER tweener = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,
-                                sizeof(struct _TWEENER));
-
-    if (tweener == NULL) {
+    PTWEENER pTweener = NULL;
+    
+    pTweener = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TWEENER));
+    
+    if (pTweener == NULL) {
         return NULL;
     }
 
-    tweener->fDuration = fDuration;
-    tweener->fStart = fStart;
-    tweener->fTarget = fTarget;
-    tweener->fnEasing = LinearEasing;
-    tweener->fProgress = 0.0f;
-    tweener->fValue = fStart;
-    tweener->bInverted = FALSE;
+    pTweener->fDuration = fDuration;
+    pTweener->fStart    = fStart;
+    pTweener->fTarget   = fTarget;
+    pTweener->pfnEasing = Easing_Linear;
+    pTweener->fValue    = fStart;
 
-    return tweener;
+    return pTweener;
 }
 
-BOOL Tweener_Update(TWEENER tweener, FLOAT fDelta)
+BOOL Tweener_Update(PTWEENER pTweener, FLOAT fDeltaTime)
 {
-    FLOAT fProgressRatio, fEasedProgress, fDiff;
+    FLOAT fRatio, fEasedValue, fValueDiff;
 
-    if (tweener == NULL) {
+    if (pTweener == NULL) {
         return FALSE;
     }
 
-    if (tweener->fDuration <= 0.0f) {
-        tweener->fValue = tweener->fTarget;
-        tweener->fProgress = tweener->fDuration;
+    if (pTweener->fDuration <= 0.0f) {
+        pTweener->fValue = pTweener->fTarget;
+        pTweener->fProgress = pTweener->fDuration;
         return FALSE;
     }
 
-    fDelta = (tweener->bInverted) ? -fDelta : fDelta;
-    tweener->fProgress = tweener->fProgress + fDelta;
+    pTweener->fProgress += (pTweener->bInverted ? -fDeltaTime : fDeltaTime);
 
-    if (tweener->fProgress < 0.0f) {
-        tweener->fProgress = 0.0f;
-    } else if (tweener->fProgress > tweener->fDuration) {
-        tweener->fProgress = tweener->fDuration;
+    if (pTweener->fProgress < 0.0f) {
+        pTweener->fProgress = 0.0f;
+    } else if (pTweener->fProgress > pTweener->fDuration) {
+        pTweener->fProgress = pTweener->fDuration;
     }
 
-    fProgressRatio = tweener->fProgress / tweener->fDuration;
+    fRatio = pTweener->fProgress / pTweener->fDuration;
+    fEasedValue = pTweener->pfnEasing(fRatio);
+    fValueDiff = pTweener->fTarget - pTweener->fStart;
 
-    fEasedProgress = tweener->fnEasing(fProgressRatio);
-    fDiff = tweener->fTarget - tweener->fStart;
+    pTweener->fValue = pTweener->fStart + fValueDiff * fEasedValue;
 
-    tweener->fValue = tweener->fStart + fDiff * fEasedProgress;
-
-    return tweener->fProgress < tweener->fDuration;
+    return pTweener->fProgress < pTweener->fDuration;
 }
 
-VOID Tweener_Invert(TWEENER tweener, BOOL bInvert)
+VOID Tweener_Invert(PTWEENER pTweener, BOOL bInvert)
 {
-    if (tweener == NULL) {
+    if (pTweener != NULL) {
+        pTweener->bInverted = bInvert;
+    }
+}
+
+FLOAT Tweener_GetValue(CONST PTWEENER pTweener)
+{
+    return (pTweener != NULL) ? pTweener->fValue : 0.0f;
+}
+
+VOID Tweener_SetEasing(PTWEENER pTweener, PFNEASING pfnEasing)
+{
+    if (pTweener == NULL) {
         return;
     }
 
-    tweener->bInverted = bInvert;
+    pTweener->pfnEasing = (pfnEasing != NULL) ? pfnEasing : Easing_Linear;
+
+    Tweener_Reset(pTweener);
 }
 
-FLOAT Tweener_GetValue(TWEENER tweener)
+VOID Tweener_Reset(PTWEENER pTweener)
 {
-    if (tweener == NULL) {
-        return 0.0f;
+    if (pTweener != NULL) {
+        pTweener->fProgress = pTweener->fValue = 0.0f;
     }
-
-    return tweener->fValue;
 }
 
-VOID Tweener_SetEasing(TWEENER tweener, EASING fnEasing)
+VOID Tweener_Destroy(PTWEENER pTweener)
 {
-    if (tweener == NULL) {
-        return;
+    if (pTweener != NULL) {
+        HeapFree(GetProcessHeap(), 0, pTweener);
     }
-
-    tweener->fnEasing = fnEasing ? fnEasing : LinearEasing;
-
-    Tweener_Reset(tweener);
-}
-
-VOID Tweener_Reset(TWEENER tweener)
-{
-    if (tweener == NULL) {
-        return;
-    }
-
-    tweener->fProgress = 0;
-    tweener->fValue = 0;
-}
-
-VOID Tweener_Destroy(TWEENER tweener)
-{
-    if (tweener == NULL) {
-        return;
-    }
-
-    HeapFree(GetProcessHeap(), 0, tweener);
 }

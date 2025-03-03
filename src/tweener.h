@@ -19,22 +19,22 @@
 
 #include <windows.h>
 
-typedef FLOAT (*EASING)(FLOAT x);
+typedef FLOAT (*PFNEASING)(FLOAT x);
 
-typedef struct _TWEENER *TWEENER;
+typedef struct _TWEENER TWEENER, *PTWEENER;
 
-TWEENER Tweener_Create(FLOAT fDuration, FLOAT fStart, FLOAT fTarget);
+PTWEENER Tweener_Create(FLOAT fDuration, FLOAT fStart, FLOAT fTarget);
 
-BOOL Tweener_Update(TWEENER tweener, FLOAT fDelta);
+BOOL Tweener_Update(PTWEENER pTweener, FLOAT fDeltaTime);
 
-VOID Tweener_Invert(TWEENER tweener, BOOL bInvert);
+VOID Tweener_Invert(PTWEENER pTweener, BOOL bInvert);
 
-FLOAT Tweener_GetValue(TWEENER tweener);
+FLOAT Tweener_GetValue(CONST PTWEENER pTweener);
 
-VOID Tweener_SetEasing(TWEENER tweener, EASING fnEasing);
+VOID Tweener_SetEasing(PTWEENER pTweener, PFNEASING pfnEasing);
 
-VOID Tweener_Reset(TWEENER tweener);
+VOID Tweener_Reset(PTWEENER pTweener);
 
-VOID Tweener_Destroy(TWEENER tweener);
+VOID Tweener_Destroy(PTWEENER pTweener);
 
 #endif /* __TWEENER_H */

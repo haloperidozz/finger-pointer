@@ -19,23 +19,41 @@
 
 #include <windows.h>
 #include <d2d1.h>
-#include <tchar.h>
 
-typedef struct _SPRITE *SPRITE;
+typedef struct _SPRITE SPRITE, *PSPRITE;
 
-SPRITE Sprite_LoadFromResource(ID2D1HwndRenderTarget *pRenderTarget,
-                               LPCTSTR lpszName, LPCTSTR lpszType);
+PSPRITE Sprite_CreateFromResource(ID2D1HwndRenderTarget *pRenderTarget,
+                                  LPCTSTR lpszName,
+                                  LPCTSTR lpszType);
 
-D2D1_POINT_2F Sprite_GetCenterPoint(SPRITE sprite);
+VOID Sprite_SetPosition(PSPRITE pSprite, D2D1_POINT_2F position);
+D2D1_POINT_2F Sprite_GetPosition(CONST PSPRITE pSprite);
 
-VOID Sprite_SetPosition(SPRITE sprite, D2D1_POINT_2F position);
-D2D1_POINT_2F Sprite_GetPosition(SPRITE sprite);
+VOID Sprite_SetRotation(PSPRITE pSprite, FLOAT fAngle);
+FLOAT Sprite_GetRotation(CONST PSPRITE pSprite);
 
-VOID Sprite_SetRotation(SPRITE sprite, FLOAT fAngle);
-FLOAT Sprite_GetRotation(SPRITE sprite);
+D2D1_SIZE_U Sprite_GetSize(CONST PSPRITE pSprite);
 
-VOID Sprite_Draw(SPRITE sprite, ID2D1RenderTarget *pRenderTarget);
+D2D1_POINT_2F Sprite_GetCenterPoint(CONST PSPRITE pSprite);
 
-VOID Sprite_Destroy(SPRITE sprite);
+VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1RenderTarget *pRenderTarget);
+
+VOID Sprite_Destroy(PSPRITE pSprite);
+
+static VOID Sprite_DrawHwnd(CONST PSPRITE pSprite,
+                            ID2D1HwndRenderTarget *pHwndRenderTarget)
+{
+    ID2D1RenderTarget *pRenderTarget = NULL;
+
+    if (pHwndRenderTarget == NULL) {
+        return;
+    }
+
+    ID2D1HwndRenderTarget_QueryInterface(
+        pHwndRenderTarget,
+        &IID_ID2D1RenderTarget, (LPVOID*) &pRenderTarget);
+    
+    Sprite_Draw(pSprite, pRenderTarget);
+}
 
 #endif /* __SPRITE_H */

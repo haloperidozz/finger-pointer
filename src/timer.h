@@ -19,16 +19,16 @@
 
 #include <windows.h>
 
-typedef struct _TIMER *TIMER;
+typedef struct _TIMER TIMER, *PTIMER;
 
-TIMER Timer_Create(VOID);
+PTIMER Timer_Create(VOID);
 
-VOID Timer_Tick(TIMER timer);
+VOID Timer_Tick(PTIMER pTimer);
 
-FLOAT Timer_GetDeltaTime(TIMER timer);
+FLOAT Timer_GetDeltaTime(CONST PTIMER pTimer);
 
-VOID Timer_Reset(TIMER timer);
+VOID Timer_Reset(PTIMER pTimer);
 
-VOID Timer_Destroy(TIMER timer);
+VOID Timer_Destroy(PTIMER pTimer);
 
 #endif /* __TIMER_H */

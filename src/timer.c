@@ -17,71 +17,64 @@
 #include "timer.h"
 
 struct _TIMER {
-    LARGE_INTEGER frequency;
-    LARGE_INTEGER lastCount;
-    LARGE_INTEGER currentCount;
-    FLOAT         fDeltaTime;
+    LARGE_INTEGER   frequency;
+    LARGE_INTEGER   lastCount;
+    LARGE_INTEGER   currentCount;
+    FLOAT           fDeltaTime;
 };
 
-TIMER Timer_Create(VOID)
+PTIMER Timer_Create(VOID)
 {
-    TIMER timer;
+    PTIMER pTimer = NULL;
     
-    timer = HeapAlloc(
-        GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct _TIMER));
+    pTimer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TIMER));
 
-    if (timer == NULL) {
+    if (pTimer == NULL) {
         return NULL;
     }
 
-    QueryPerformanceFrequency(&(timer->frequency));    
-    Timer_Reset(timer);
+    QueryPerformanceFrequency(&(pTimer->frequency));    
+    Timer_Reset(pTimer);
 
-    return timer;
+    return pTimer;
 }
 
-VOID Timer_Tick(TIMER timer)
+VOID Timer_Tick(PTIMER pTimer)
 {
-    LONGLONG llElapsed, llElapsedTime;
+    LONGLONG llElapsed, llFrequency;
 
-    if (timer == NULL) {
+    if (pTimer == NULL) {
         return;
     }
 
-    QueryPerformanceCounter(&(timer->currentCount));
+    QueryPerformanceCounter(&(pTimer->currentCount));
 
-    llElapsed = timer->currentCount.QuadPart - timer->lastCount.QuadPart;
-    llElapsedTime = (llElapsed * 1000000) / timer->frequency.QuadPart;
+    llElapsed = pTimer->currentCount.QuadPart - pTimer->lastCount.QuadPart;
+    llFrequency = pTimer->frequency.QuadPart;
+
+    pTimer->fDeltaTime = (FLOAT) llElapsed / (FLOAT) llFrequency;
+    pTimer->lastCount = pTimer->currentCount;
+}
+
+FLOAT Timer_GetDeltaTime(CONST PTIMER pTimer)
+{
+    return (pTimer != NULL) ? pTimer->fDeltaTime : 0.0f;
+}
+
+VOID Timer_Reset(PTIMER pTimer)
+{
+    if (pTimer == NULL) {
+        return;
+    }
+
+    QueryPerformanceCounter(&(pTimer->lastCount));
     
-    timer->fDeltaTime = (FLOAT) llElapsedTime / 1000000.0f;
-    timer->lastCount = timer->currentCount;
+    pTimer->fDeltaTime = 0.0f;
 }
 
-FLOAT Timer_GetDeltaTime(TIMER timer)
+VOID Timer_Destroy(PTIMER pTimer)
 {
-    if (timer == NULL) {
-        return 0.0f;
+    if (pTimer != NULL) {
+        HeapFree(GetProcessHeap(), 0, pTimer);
     }
-
-    return timer->fDeltaTime;
-}
-
-VOID Timer_Reset(TIMER timer)
-{
-    if (timer == NULL) {
-        return;
-    }
-
-    QueryPerformanceCounter(&(timer->lastCount));
-    
-    timer->fDeltaTime = 0.0f;
-}
-
-VOID Timer_Destroy(TIMER timer)
-{
-    if (timer == NULL) {
-        return;
-    }
-
-    HeapFree(GetProcessHeap(), 0, timer);
 }
