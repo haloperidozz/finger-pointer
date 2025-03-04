@@ -19,10 +19,12 @@
 #include <math.h>
 #include <dwmapi.h>
 #include <tchar.h>
+#include <mfapi.h>
 
 #include "sprite.h"
 #include "tweener.h"
 #include "timer.h"
+#include "audio.h"
 
 #include "helper.h"
 #include "resource.h"
@@ -41,6 +43,7 @@ typedef struct _FINGERPOINTER {
     PSPRITE                 pSprite;
     PTWEENER                pTweener;
     PTIMER                  pTimer;
+    PAUDIO                  pAudioEffect;
 
     NOTIFYICONDATA          nid;
 
@@ -140,10 +143,9 @@ FingerPointer_OnLeftMouseButton(PFINGERPOINTER pFingerPointer, BOOL bPress)
     Tweener_Invert(pFingerPointer->pTweener, bPress);
 
     if (bPress == FALSE) {
-        PlaySound(NULL, NULL, 0);
+        Audio_Stop(pFingerPointer->pAudioEffect);
     } else {
-        PlaySound(MAKEINTRESOURCE(IDR_EFFECT_WAV),
-            pFingerPointer->hInstance, SND_RESOURCE | SND_ASYNC);
+        Audio_PlayAsync(pFingerPointer->pAudioEffect);
     }
 
     return 0;
@@ -177,6 +179,11 @@ static LRESULT FingerPointer_OnMouseMove(PFINGERPOINTER pFingerPointer,
 static LRESULT FingerPointer_OnDestroy(PFINGERPOINTER pFingerPointer)
 {
     Shell_NotifyIcon(NIM_DELETE, &(pFingerPointer->nid));
+
+    if (pFingerPointer->pAudioEffect != NULL) {
+        Audio_Destroy(pFingerPointer->pAudioEffect);
+        pFingerPointer->pAudioEffect = NULL;
+    }
 
     if (pFingerPointer->pTimer != NULL) {
         Timer_Destroy(pFingerPointer->pTimer);
@@ -307,6 +314,15 @@ static LRESULT FingerPointer_OnCreate(PFINGERPOINTER pFingerPointer)
         return -1;
     }
 
+    pFingerPointer->pAudioEffect = Audio_LoadFromResource(
+        pFingerPointer->hInstance,
+        MAKEINTRESOURCE(IDR_EFFECT_WAV), TEXT("WAVE"));
+
+    if (pFingerPointer->pAudioEffect == NULL) {
+        FingerPointer_OnDestroy(pFingerPointer);
+        return -1;
+    }
+
     /* ALT + H */
     RegisterHotKey(pFingerPointer->hWnd, 1, MOD_ALT | MOD_NOREPEAT, 0x48);
 
@@ -422,6 +438,10 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
         return -1;
     }
 
+    if (FAILED(MFStartup(MF_VERSION, MFSTARTUP_LITE))) {
+        return -1;
+    }
+
     wcex.cbSize        = sizeof(WNDCLASSEX);
     wcex.style         = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc   = WndProc;
@@ -486,6 +506,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     }
 
     HeapFree(GetProcessHeap(), 0, pFingerPointer);
+    MFShutdown();
     CoUninitialize();
     ReleaseMutex(hMutex);
     return 0;
