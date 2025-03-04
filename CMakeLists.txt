@@ -20,11 +20,14 @@ target_compile_features(FingerPointer PRIVATE c_std_99)
 target_include_directories(FingerPointer PRIVATE ${SRC_DIR})
 
 target_link_libraries(FingerPointer PRIVATE 
-    Shell32 
-    d2d1 
+    Shlwapi
+    d2d1
     windowscodecs 
     Winmm 
     Dwmapi
+    Mfplat
+    Mfplay
+    Mfuuid
 )
 
 if(MINGW)
