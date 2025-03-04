@@ -70,14 +70,14 @@ MFCreateMFByteStreamOnStream(IStream *pStream, IMFByteStream **ppByteStream)
  * Audio Callback
  ***********************************************************************/
 
-static ULONG STDMETHODCALLTYPE
+static STDMETHODIMP_(ULONG)
 AudioCallback_AddRef(IMFPMediaPlayerCallback *pThis)
 {
     struct _AUDIOCALLBACK *pCallback = (struct _AUDIOCALLBACK*) pThis;
     return InterlockedIncrement(&pCallback->lRefCount);
 }
 
-static ULONG STDMETHODCALLTYPE
+static STDMETHODIMP_(ULONG)
 AudioCallback_Release(IMFPMediaPlayerCallback *pThis)
 {
     ULONG ulCount;
@@ -92,7 +92,7 @@ AudioCallback_Release(IMFPMediaPlayerCallback *pThis)
     return ulCount;
 }
 
-static HRESULT STDMETHODCALLTYPE
+static STDMETHODIMP
 AudioCallback_QueryInterface(IMFPMediaPlayerCallback *pThis,
                              REFIID riid, VOID **ppv)
 {
@@ -108,7 +108,7 @@ AudioCallback_QueryInterface(IMFPMediaPlayerCallback *pThis,
     return E_NOINTERFACE;
 }
 
-static VOID STDMETHODCALLTYPE
+static STDMETHODIMP_(VOID)
 AudioCallback_OnMediaPlayerEvent(IMFPMediaPlayerCallback *pThis,
                                  MFP_EVENT_HEADER *pEventHeader)
 {
@@ -269,14 +269,14 @@ cleanup:
     return pAudio;
 }
 
-VOID Audio_PlayAsync(PAUDIO pAudio)
+VOID Audio_PlayAsync(CONST PAUDIO pAudio)
 {
     if (pAudio != NULL) {
         pAudio->pPlayer->lpVtbl->Play(pAudio->pPlayer);
     }
 }
 
-VOID Audio_Stop(PAUDIO pAudio)
+VOID Audio_Stop(CONST PAUDIO pAudio)
 {
     if (pAudio != NULL) {
         pAudio->pPlayer->lpVtbl->Stop(pAudio->pPlayer);
