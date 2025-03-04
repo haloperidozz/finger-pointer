@@ -17,6 +17,17 @@
 #ifndef __AUDIO_H
 #define __AUDIO_H
 
+#if __MINGW32__
+
+/***********************************************************************
+ * HACK: Temporary attempt to fix
+ * "undefined reference to 'IID_IMFPMediaPlayerCallback'" on MinGW
+ ***********************************************************************/
+
+#include <initguid.h>
+
+#endif /* __MINGW32__ */
+
 #include <windows.h>
 
 typedef struct _AUDIO AUDIO, *PAUDIO;
