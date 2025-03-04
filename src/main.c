@@ -26,7 +26,9 @@
 #include "timer.h"
 #include "audio.h"
 
+#include "d2d1_vtbl.h"
 #include "helper.h"
+
 #include "resource.h"
 
 #define FINGERPOINTER_CLASSNAME TEXT("FingerPointerClass")
@@ -416,8 +418,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
  * WinMain
  ***********************************************************************/
 
- INT APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                        PTSTR lpCmdLine, int nCmdShow)
+INT APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                       PTSTR lpCmdLine, int nCmdShow)
 {
     PFINGERPOINTER pFingerPointer = NULL;
     MSG msg = {0};

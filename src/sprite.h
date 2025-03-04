@@ -18,7 +18,8 @@
 #define __SPRITE_H
 
 #include <windows.h>
-#include <d2d1.h>
+
+#include "d2d1_vtbl.h"
 
 typedef struct _SPRITE SPRITE, *PSPRITE;
 
