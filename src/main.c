@@ -49,8 +49,11 @@ typedef struct _FINGERPOINTER {
 
     NOTIFYICONDATA          nid;
 
+    FLOAT                   fScale;
+    
     BOOL                    bInitialized;
     BOOL                    bShow;
+    BOOL                    bUpdateScale;
 } FINGERPOINTER, *PFINGERPOINTER;
 
 static VOID FingerPointer_ToggleWindow(PFINGERPOINTER pFingerPointer)
@@ -68,10 +71,8 @@ static VOID FingerPointer_ToggleWindow(PFINGERPOINTER pFingerPointer)
         pFingerPointer->bShow = TRUE;
     } else {
         ShowWindow(pFingerPointer->hWnd, SW_HIDE);
+        ID2D1HwndRenderTarget_Flush(pFingerPointer->pRenderTarget, NULL, NULL);
         pFingerPointer->bShow = FALSE;
-
-        ID2D1HwndRenderTarget_Flush(
-            pFingerPointer->pRenderTarget, NULL, NULL);
     }
 }
 
@@ -92,15 +93,33 @@ static VOID FingerPointer_Render(PFINGERPOINTER pFingerPointer)
 
 static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
 {
-    FLOAT fAngle;
+    D2D1_SIZE_U size;
+    D2D1_POINT_2F center;
+    D2D1_SIZE_F newScale;
+    FLOAT fRotation;
 
     if (pFingerPointer == NULL || pFingerPointer->bInitialized == FALSE) {
         return;
     }
 
+    if (pFingerPointer->bUpdateScale == TRUE) {
+        size = Sprite_GetBitmapSize(pFingerPointer->pSprite);
+
+        newScale.width  = pFingerPointer->fScale;
+        newScale.height = pFingerPointer->fScale;
+
+        center.x = ((FLOAT) size.width  * newScale.width) / 2.0f;
+        center.y = ((FLOAT) size.height * newScale.height);
+
+        Sprite_SetRotationCenter(pFingerPointer->pSprite, center);
+        Sprite_SetScale(pFingerPointer->pSprite, newScale);
+
+        pFingerPointer->bUpdateScale = FALSE;
+    }
+
     if (Tweener_Update(pFingerPointer->pTweener, fDelta)) {
-        fAngle = Tweener_GetValue(pFingerPointer->pTweener);
-        Sprite_SetRotation(pFingerPointer->pSprite, fAngle);
+        fRotation = Tweener_GetValue(pFingerPointer->pTweener);
+        Sprite_SetRotation(pFingerPointer->pSprite, fRotation);
     }
 }
 
@@ -111,14 +130,12 @@ static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
 static LRESULT FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer,
                                         WPARAM wParam, LPARAM lParam)
 {
+    LPCTSTR lpMenu = MAKEINTRESOURCE(IDM_MENU_MAIN);
     HMENU hMenu = NULL;
     POINT pt;
 
-    hMenu = LoadMenu(
-        pFingerPointer->hInstance, MAKEINTRESOURCE(IDM_MENU_MAIN));
+    hMenu = GetSubMenu(LoadMenuW(pFingerPointer->hInstance, lpMenu), 0);
     
-    hMenu = GetSubMenu(hMenu, 0);
-
     switch (lParam) {
         case WM_RBUTTONUP: {
             GetCursorPos(&pt);
@@ -136,6 +153,18 @@ static LRESULT FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer,
         }
     }
 
+    return 0;
+}
+#include <stdio.h>
+static LRESULT
+FingerPointer_OnMouseWheel(PFINGERPOINTER pFingerPointer, SHORT zDelta)
+{
+    FLOAT fNewScale;
+
+    fNewScale = pFingerPointer->fScale += (zDelta > 0) ? 0.05f : -0.05f;
+
+    pFingerPointer->fScale = fmaxf(0.0f, fminf(fNewScale, 1.0f));
+    pFingerPointer->bUpdateScale = TRUE;
     return 0;
 }
 
@@ -166,14 +195,16 @@ static LRESULT FingerPointer_OnKey(PFINGERPOINTER pFingerPointer,
 static LRESULT FingerPointer_OnMouseMove(PFINGERPOINTER pFingerPointer,
                                          INT x, INT y)
 {
-    D2D1_POINT_2F position, center;
+    D2D1_SIZE_U size;
+    D2D1_SIZE_F scale;
 
-    center = Sprite_GetCenterPoint(pFingerPointer->pSprite);
+    size = Sprite_GetBitmapSize(pFingerPointer->pSprite);
+    scale = Sprite_GetScale(pFingerPointer->pSprite);
 
-    position.x = ((FLOAT) x) - center.x;
-    position.y = ((FLOAT) y) - center.y;
-
-    Sprite_SetPosition(pFingerPointer->pSprite, position);
+    Sprite_SetPosition(pFingerPointer->pSprite, (D2D1_POINT_2F) {
+        .x = (FLOAT) x - ((FLOAT) size.width  * scale.width  / 2.0f),
+        .y = (FLOAT) y - ((FLOAT) size.height * scale.height / 2.0f)
+    });
 
     return 0;
 }
@@ -349,6 +380,8 @@ static LRESULT FingerPointer_OnCreate(PFINGERPOINTER pFingerPointer)
     pFingerPointer->bShow = FALSE;
     pFingerPointer->bInitialized = TRUE;
 
+    pFingerPointer->fScale = 1.0f;
+    pFingerPointer->bUpdateScale = TRUE;
     return 0;
 }
 
@@ -362,6 +395,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     LPCREATESTRUCT pcs;
     PFINGERPOINTER pFingerPointer = NULL;
     INT x, y;
+    SHORT zDelta;
     BOOL bResult;
 
     if (uMsg == WM_CREATE) {
@@ -381,6 +415,11 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
     switch (uMsg) {
         case UM_TRAYICON:
             return FingerPointer_OnTrayIcon(pFingerPointer, wParam, lParam);
+        
+        case WM_MOUSEWHEEL: {
+            zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            return FingerPointer_OnMouseWheel(pFingerPointer, zDelta);
+        }
 
         case WM_MOUSEMOVE: {
             x = GET_X_LPARAM(lParam);
