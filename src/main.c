@@ -50,6 +50,7 @@ typedef struct _FINGERPOINTER {
     NOTIFYICONDATA          nid;
 
     FLOAT                   fScale;
+    D2D1_POINT_2F           position;
     
     BOOL                    bInitialized;
     BOOL                    bShow;
@@ -102,6 +103,8 @@ static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
         return;
     }
 
+    Sprite_SetPosition(pFingerPointer->pSprite, pFingerPointer->position);
+
     if (pFingerPointer->bUpdateScale == TRUE) {
         size = Sprite_GetBitmapSize(pFingerPointer->pSprite);
 
@@ -127,8 +130,9 @@ static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
  * Events
  ***********************************************************************/
 
-static LRESULT FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer,
-                                        WPARAM wParam, LPARAM lParam)
+static LRESULT
+FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer, WPARAM wParam,
+                         LPARAM lParam)
 {
     LPCTSTR lpMenu = MAKEINTRESOURCE(IDM_MENU_MAIN);
     HMENU hMenu = NULL;
@@ -155,7 +159,7 @@ static LRESULT FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer,
 
     return 0;
 }
-#include <stdio.h>
+
 static LRESULT
 FingerPointer_OnMouseWheel(PFINGERPOINTER pFingerPointer, SHORT zDelta)
 {
@@ -182,30 +186,43 @@ FingerPointer_OnLeftMouseButton(PFINGERPOINTER pFingerPointer, BOOL bPress)
     return 0;
 }
 
-static LRESULT FingerPointer_OnKey(PFINGERPOINTER pFingerPointer,
-                                   WPARAM wParam, LPARAM lParam, BOOL bDown)
+static LRESULT
+FingerPointer_OnMouseMove(PFINGERPOINTER pFingerPointer, INT x, INT y)
 {
-    if (bDown == FALSE && wParam == VK_ESCAPE) {
-        FingerPointer_ToggleWindow(pFingerPointer);
-    }
+    D2D1_POINT_2F spritePosition;
+    INT iCenterX, iCenterY;
+    INT iDeltaX, iDeltaY;
+    INT iMinX, iMinY, iMaxX, iMaxY;
+    POINT ptCenter;
+    RECT rc;
 
-    return 0;
-}
+    GetClientRect(pFingerPointer->hWnd, &rc);
 
-static LRESULT FingerPointer_OnMouseMove(PFINGERPOINTER pFingerPointer,
-                                         INT x, INT y)
-{
-    D2D1_SIZE_U size;
-    D2D1_SIZE_F scale;
+    iCenterX = (rc.right - rc.left) / 2;
+    iCenterY = (rc.bottom - rc.top) / 2;
 
-    size = Sprite_GetBitmapSize(pFingerPointer->pSprite);
-    scale = Sprite_GetScale(pFingerPointer->pSprite);
+    iDeltaX = x - iCenterX;
+    iDeltaY = y - iCenterY;
 
-    Sprite_SetPosition(pFingerPointer->pSprite, (D2D1_POINT_2F) {
-        .x = (FLOAT) x - ((FLOAT) size.width  * scale.width  / 2.0f),
-        .y = (FLOAT) y - ((FLOAT) size.height * scale.height / 2.0f)
-    });
+    spritePosition.x = pFingerPointer->position.x + (FLOAT) iDeltaX;
+    spritePosition.y = pFingerPointer->position.y + (FLOAT) iDeltaY;
 
+    iMinX = -50;
+    iMinY = -50;
+    iMaxX = (rc.right - rc.left) + 50;
+    iMaxY = (rc.bottom - rc.top) + 50;
+
+    spritePosition.x = fmaxf(iMinX, fminf(spritePosition.x, iMaxX));
+    spritePosition.y = fmaxf(iMinY, fminf(spritePosition.y, iMaxY));
+
+    pFingerPointer->position = spritePosition;
+
+    ptCenter.x = iCenterX;
+    ptCenter.y = iCenterY;
+
+    ClientToScreen(pFingerPointer->hWnd, &ptCenter);
+
+    SetCursorPos(ptCenter.x, ptCenter.y);
     return 0;
 }
 
@@ -249,15 +266,17 @@ static LRESULT FingerPointer_OnDestroy(PFINGERPOINTER pFingerPointer)
     return 0;
 }
 
-static LRESULT FingerPointer_OnHotkey(PFINGERPOINTER pFingerPointer,
-                                      WPARAM wParam, LPARAM lParam)
+static LRESULT
+FingerPointer_OnHotkey(PFINGERPOINTER pFingerPointer, WPARAM wParam,
+                       LPARAM lParam)
 {
     FingerPointer_ToggleWindow(pFingerPointer);
     return 0;
 }
 
-static LRESULT FingerPointer_OnCommand(PFINGERPOINTER pFingerPointer,
-                                       WPARAM wParam, LPARAM lParam)
+static LRESULT
+FingerPointer_OnCommand(PFINGERPOINTER pFingerPointer, WPARAM wParam,
+                        LPARAM lParam)
 {
     TCHAR szBuffer[256];
 
@@ -283,9 +302,10 @@ static LRESULT FingerPointer_OnCreate(PFINGERPOINTER pFingerPointer)
 {
     D2D1_RENDER_TARGET_PROPERTIES renderTargetProps;
     D2D1_HWND_RENDER_TARGET_PROPERTIES hwndRenderTargetProps;
-    HRESULT hRes = S_OK;
-    HMENU hMenu = NULL;
+    D2D1_SIZE_U spriteSize;
+    D2D1_POINT_2F spritePosition;
     RECT rc;
+    HRESULT hRes = S_OK;
 
     hRes = D2D1CreateFactory(
         D2D1_FACTORY_TYPE_SINGLE_THREADED,
@@ -379,9 +399,17 @@ static LRESULT FingerPointer_OnCreate(PFINGERPOINTER pFingerPointer)
 
     pFingerPointer->bShow = FALSE;
     pFingerPointer->bInitialized = TRUE;
+    pFingerPointer->bUpdateScale = TRUE;
 
     pFingerPointer->fScale = 1.0f;
-    pFingerPointer->bUpdateScale = TRUE;
+
+    spriteSize = Sprite_GetBitmapSize(pFingerPointer->pSprite);
+
+    spritePosition.x = ((rc.right - rc.left) - spriteSize.width)  / 2.0f;
+    spritePosition.y = ((rc.bottom - rc.top) - spriteSize.height) / 2.0f;
+
+    pFingerPointer->position = spritePosition;
+
     return 0;
 }
 
@@ -427,13 +455,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam,
 
             return FingerPointer_OnMouseMove(pFingerPointer, x, y);
         }
-
-        case WM_KEYDOWN:
-            return FingerPointer_OnKey(pFingerPointer, wParam, lParam, TRUE);
-
-        case WM_KEYUP:
-            return FingerPointer_OnKey(pFingerPointer, wParam, lParam, FALSE);
-
+        
         case WM_LBUTTONDOWN:
             return FingerPointer_OnLeftMouseButton(pFingerPointer, TRUE);
         
