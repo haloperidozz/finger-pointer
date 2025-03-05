@@ -25,21 +25,12 @@
 struct _SPRITE {
     ID2D1Bitmap    *pBitmap;
     D2D1_SIZE_U     bitmapSize;
-    D2D1_SIZE_U     size;
-    D2D1_SIZE_F     scale;
     D2D1_POINT_2F   position;
-    D2D1_POINT_2F   centerPoint;
-    FLOAT           fAngle;
+    D2D1_SIZE_F     scale;
+    D2D1_POINT_2F   scaleCenter;
+    FLOAT           fRotation;
+    D2D1_POINT_2F   rotationCenter;
 };
-
-static inline VOID UpdateSizeAndCenterPoint(PSPRITE pSprite)
-{
-    pSprite->size.width  = pSprite->bitmapSize.width  * pSprite->scale.width;
-    pSprite->size.height = pSprite->bitmapSize.height * pSprite->scale.height;
-
-    pSprite->centerPoint.x = (FLOAT) pSprite->size.width  / 2.0f;
-    pSprite->centerPoint.y = (FLOAT) pSprite->size.height / 2.0f;
-}
 
 PSPRITE Sprite_CreateFromResource(ID2D1HwndRenderTarget *pRenderTarget,
                                   LPCTSTR lpszName,
@@ -163,8 +154,6 @@ PSPRITE Sprite_CreateFromResource(ID2D1HwndRenderTarget *pRenderTarget,
     
     pSprite->scale = (D2D1_SIZE_F) { 1.0f, 1.0f };
 
-    UpdateSizeAndCenterPoint(pSprite);
-
 cleanup:
     if (pConverter != NULL) {
         pConverter->lpVtbl->Release(pConverter);
@@ -204,20 +193,31 @@ D2D1_POINT_2F Sprite_GetPosition(CONST PSPRITE pSprite)
 VOID Sprite_SetRotation(PSPRITE pSprite, FLOAT fAngle)
 {
     if (pSprite != NULL) {
-        pSprite->fAngle = fAngle;
+        pSprite->fRotation = fAngle;
     }
 }
 
 FLOAT Sprite_GetRotation(CONST PSPRITE pSprite)
 {
-    return (pSprite != NULL) ? pSprite->fAngle : 0.0f;
+    return (pSprite != NULL) ? pSprite->fRotation : 0.0f;
+}
+
+VOID Sprite_SetRotationCenter(PSPRITE pSprite, D2D1_POINT_2F center)
+{
+    if (pSprite != NULL) {
+        pSprite->rotationCenter = center;
+    }
+}
+
+D2D1_POINT_2F Sprite_GetRotationCenter(CONST PSPRITE pSprite)
+{
+    return (pSprite != NULL) ? pSprite->rotationCenter : (D2D1_POINT_2F) {0};
 }
 
 VOID Sprite_SetScale(PSPRITE pSprite, D2D1_SIZE_F scale)
 {
     if (pSprite != NULL) {
         pSprite->scale = scale;
-        UpdateSizeAndCenterPoint(pSprite);
     }
 }
 
@@ -226,19 +226,25 @@ D2D1_SIZE_F Sprite_GetScale(CONST PSPRITE pSprite)
     return (pSprite != NULL) ? pSprite->scale : (D2D1_SIZE_F) {0};
 }
 
-D2D1_SIZE_U Sprite_GetSize(CONST PSPRITE pSprite)
+VOID Sprite_SetScaleCenter(PSPRITE pSprite, D2D1_POINT_2F center)
 {
-    return (pSprite != NULL) ? pSprite->size : (D2D1_SIZE_U) {0};
+    if (pSprite != NULL) {
+        pSprite->scaleCenter = center;
+    }
 }
 
-D2D1_POINT_2F Sprite_GetCenterPoint(CONST PSPRITE pSprite)
+D2D1_POINT_2F Sprite_GetScaleCenter(CONST PSPRITE pSprite)
 {
-    return (pSprite != NULL) ? pSprite->centerPoint : (D2D1_POINT_2F) {0};
+    return (pSprite != NULL) ? pSprite->scaleCenter : (D2D1_POINT_2F) {0};
+}
+
+D2D1_SIZE_U Sprite_GetBitmapSize(CONST PSPRITE pSprite)
+{
+    return (pSprite != NULL) ? pSprite->bitmapSize : (D2D1_SIZE_U) {0};
 }
 
 VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget)
 {
-    D2D1_POINT_2F centerPoint;
     D2D1_MATRIX_3X2_F rotation, translation, scale;
     D2D1_MATRIX_3X2_F oldTransform, transform0, transform1;
 
@@ -246,13 +252,11 @@ VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget)
         return;
     }
 
-    centerPoint = Sprite_GetCenterPoint(pSprite);
-
     ID2D1HwndRenderTarget_GetTransform(pRenderTarget, &oldTransform);
 
     MakeTranslateMatrix(pSprite->position, &translation);
-    MakeRotateMatrix(pSprite->fAngle, centerPoint, &rotation);
-    MakeScaleMatrix(pSprite->scale, (D2D1_POINT_2F) {0}, &scale);
+    MakeRotateMatrix(pSprite->fRotation, pSprite->rotationCenter, &rotation);
+    MakeScaleMatrix(pSprite->scale, pSprite->scaleCenter, &scale);
 
     /* T*R*S */
     MultiplyMatrices(&translation, &rotation, &transform0);

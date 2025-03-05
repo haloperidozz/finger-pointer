@@ -33,12 +33,16 @@ D2D1_POINT_2F Sprite_GetPosition(CONST PSPRITE pSprite);
 VOID Sprite_SetRotation(PSPRITE pSprite, FLOAT fAngle);
 FLOAT Sprite_GetRotation(CONST PSPRITE pSprite);
 
+VOID Sprite_SetRotationCenter(PSPRITE pSprite, D2D1_POINT_2F center);
+D2D1_POINT_2F Sprite_GetRotationCenter(CONST PSPRITE pSprite);
+
 VOID Sprite_SetScale(PSPRITE pSprite, D2D1_SIZE_F scale);
 D2D1_SIZE_F Sprite_GetScale(CONST PSPRITE pSprite);
 
-D2D1_SIZE_U Sprite_GetSize(CONST PSPRITE pSprite);
+VOID Sprite_SetScaleCenter(PSPRITE pSprite, D2D1_POINT_2F center);
+D2D1_POINT_2F Sprite_GetScaleCenter(CONST PSPRITE pSprite);
 
-D2D1_POINT_2F Sprite_GetCenterPoint(CONST PSPRITE pSprite);
+D2D1_SIZE_U Sprite_GetBitmapSize(CONST PSPRITE pSprite);
 
 VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget);
 
