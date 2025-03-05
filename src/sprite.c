@@ -226,7 +226,7 @@ VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget)
     centerPoint = Sprite_GetCenterPoint(pSprite);
 
     MakeRotateMatrix(pSprite->fAngle, centerPoint, &rotation);
-    MakeTranslateMatrixByPoint(pSprite->position, &translation);
+    MakeTranslateMatrix(pSprite->position, &translation);
     MultiplyMatrices(&translation, &rotation, &transform);
 
     ID2D1HwndRenderTarget_SetTransform(pRenderTarget, &transform);

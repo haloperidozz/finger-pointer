@@ -44,18 +44,15 @@ static FLOAT Easing_EaseOutCirc(FLOAT x)
     D2D1MakeRotateMatrix((fAngle), (center), (pResult))
 
 static inline VOID
-MakeTranslateMatrix(FLOAT x, FLOAT y, D2D1_MATRIX_3X2_F *pResult)
+MakeTranslateMatrix(D2D1_POINT_2F point, D2D1_MATRIX_3X2_F *pResult)
 {
     pResult->m11 = 1.0f;
     pResult->m12 = 0.0f;
     pResult->m21 = 0.0f;
     pResult->m22 = 1.0f;
-    pResult->dx  = x;
-    pResult->dy  = y;
+    pResult->dx  = point.x;
+    pResult->dy  = point.y;
 }
-
-#define MakeTranslateMatrixByPoint(point, pResult)                  \
-    MakeTranslateMatrix((point).x, (point).y, pResult)
 
 static inline VOID
 MultiplyMatrices(D2D1_MATRIX_3X2_F *m1, D2D1_MATRIX_3X2_F *m2,
