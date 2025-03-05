@@ -152,18 +152,20 @@ static LRESULT
 FingerPointer_OnTrayIcon(PFINGERPOINTER pFingerPointer, WPARAM wParam,
                          LPARAM lParam)
 {
-    LPCTSTR lpMenu = MAKEINTRESOURCE(IDM_MENU_MAIN);
+    HINSTANCE hInstance = pFingerPointer->hInstance;
     HMENU hMenu = NULL;
+    HMENU hMenuPopup = NULL;
     POINT pt;
 
-    hMenu = GetSubMenu(LoadMenuW(pFingerPointer->hInstance, lpMenu), 0);
+    hMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDM_MENU_MAIN));
+    hMenuPopup = GetSubMenu(hMenu, 0);
     
     switch (lParam) {
         case WM_RBUTTONUP: {
             GetCursorPos(&pt);
 
             TrackPopupMenuEx(
-                hMenu, TPM_RIGHTBUTTON, pt.x, pt.y,
+                hMenuPopup, TPM_RIGHTBUTTON, pt.x, pt.y,
                 pFingerPointer->hWnd, NULL);
             
             break;
@@ -194,7 +196,7 @@ static LRESULT
 FingerPointer_OnLeftMouseButton(PFINGERPOINTER pFingerPointer, BOOL bPress)
 {
     pFingerPointer->bPressed = bPress;
-    
+
     Tweener_Invert(pFingerPointer->pTweener, bPress);
 
     if (bPress == FALSE) {
@@ -311,10 +313,13 @@ FingerPointer_OnCommand(PFINGERPOINTER pFingerPointer, WPARAM wParam,
             FingerPointer_ToggleWindow(pFingerPointer);
             break;
         case IDM_ITEM_SOURCE_CODE:
-            LoadString(
-                pFingerPointer->hInstance, IDS_GITHUB_URL, szBuffer, 256);
-            ShellExecute(
-                NULL, TEXT("open"), szBuffer, NULL, NULL, SW_SHOWNORMAL);
+            OpenUrl(MAKEINTRESOURCE(IDS_GITHUB_URL), OU_RESOURCE);
+            break;
+        case IDM_ITEM_TELEGRAM:
+            OpenUrl(MAKEINTRESOURCE(IDS_TELEGRAM_URL), OU_RESOURCE);
+            break;
+        case IDM_ITEM_TIKTOK:
+            OpenUrl(MAKEINTRESOURCE(IDS_TIKTOK_URL), OU_RESOURCE);
             break;
         case IDM_ITEM_EXIT:
             DestroyWindow(pFingerPointer->hWnd);

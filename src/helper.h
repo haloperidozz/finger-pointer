@@ -114,4 +114,21 @@ static LPVOID LoadResourceToMemory(HINSTANCE hInstance,
     return LockResource(hResourceData);
 }
 
+#define OU_DEFAULT      0x0
+#define OU_RESOURCE     0x1
+
+static VOID OpenUrl(LPCTSTR lpszUrl, DWORD dwFlags)
+{
+    TCHAR szBuffer[256];
+    UINT uResourceId;
+
+    if (dwFlags & OU_RESOURCE) {
+        uResourceId = (UINT) (WORD) (ULONG_PTR) lpszUrl;
+        LoadString(GetModuleHandle(NULL), uResourceId, szBuffer, 256);
+        lpszUrl = szBuffer;
+    }
+
+    ShellExecute(NULL, TEXT("open"), lpszUrl, NULL, NULL, SW_SHOWNORMAL);
+}
+
 #endif /* __HELPER_H */

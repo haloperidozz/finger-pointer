@@ -10,14 +10,20 @@ IDR_EFFECT_MOVE_WAV WAVE                "../res/effect_move.wav"
 STRINGTABLE
 BEGIN
     IDS_GITHUB_URL, "https://github.com/haloperidozz/finger-pointer"
+    IDS_TELEGRAM_URL, "https://t.me/haloperidozz"
+    IDS_TIKTOK_URL, "https://www.tiktok.com/@haloperidozz"
 END
 
 IDM_MENU_MAIN MENU 
 BEGIN 
     POPUP "ContextMenu"
     BEGIN 
-        MENUITEM "Show [ALT + H]",  IDM_ITEM_SHOW
-        MENUITEM "Source Code",     IDM_ITEM_SOURCE_CODE 
-        MENUITEM "Exit",            IDM_ITEM_EXIT
+        MENUITEM "Show [ALT + H]",      IDM_ITEM_SHOW
+        MENUITEM SEPARATOR
+        MENUITEM "Source Code",         IDM_ITEM_SOURCE_CODE 
+        MENUITEM "TikTok",              IDM_ITEM_TIKTOK 
+        MENUITEM "Telegram Channel",    IDM_ITEM_TELEGRAM 
+        MENUITEM SEPARATOR
+        MENUITEM "Exit",                IDM_ITEM_EXIT
     END 
 END 
