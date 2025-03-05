@@ -26,6 +26,7 @@
 struct _AUDIO {
     IMFPMediaPlayer    *pPlayer;
     BOOL                bLoop;
+    BOOL                bPlaying;
 };
 
 struct _AUDIOCALLBACK {
@@ -115,11 +116,11 @@ AudioCallback_OnMediaPlayerEvent(IMFPMediaPlayerCallback *pThis,
     struct _AUDIOCALLBACK *pCallback = (struct _AUDIOCALLBACK*) pThis;
 
     if (pEventHeader->eEventType == MFP_EVENT_TYPE_PLAYBACK_ENDED) {
-        if (pCallback->pAudio->bLoop == FALSE) {
-            return;
+        if (pCallback->pAudio->bLoop == TRUE) {
+            Audio_PlayAsync(pCallback->pAudio);
+        } else {
+            pCallback->pAudio->bPlaying = FALSE;
         }
-
-        Audio_PlayAsync(pCallback->pAudio);
     }
 }
 
@@ -269,18 +270,25 @@ cleanup:
     return pAudio;
 }
 
-VOID Audio_PlayAsync(CONST PAUDIO pAudio)
+VOID Audio_PlayAsync(PAUDIO pAudio)
 {
-    if (pAudio != NULL) {
+    if (pAudio != NULL && pAudio->bPlaying == FALSE) {
+        pAudio->bPlaying = TRUE;
         pAudio->pPlayer->lpVtbl->Play(pAudio->pPlayer);
     }
 }
 
-VOID Audio_Stop(CONST PAUDIO pAudio)
+VOID Audio_Stop(PAUDIO pAudio)
 {
-    if (pAudio != NULL) {
+    if (pAudio != NULL && pAudio->bPlaying == TRUE) {
+        pAudio->bPlaying = FALSE;
         pAudio->pPlayer->lpVtbl->Stop(pAudio->pPlayer);
     }
+}
+
+BOOL Audio_IsPlaying(CONST PAUDIO pAudio)
+{
+    return (pAudio != NULL) ? pAudio->bPlaying : FALSE;
 }
 
 VOID Audio_SetLoop(PAUDIO pAudio, BOOL bLoop)

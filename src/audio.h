@@ -36,9 +36,11 @@ PAUDIO Audio_LoadFromResource(HINSTANCE hInstance,
                               LPCTSTR lpszName,
                               LPCTSTR lpszType);
 
-VOID Audio_PlayAsync(CONST PAUDIO pAudio);
+VOID Audio_PlayAsync(PAUDIO pAudio);
 
-VOID Audio_Stop(CONST PAUDIO pAudio);
+VOID Audio_Stop(PAUDIO pAudio);
+
+BOOL Audio_IsPlaying(CONST PAUDIO pAudio);
 
 VOID Audio_SetLoop(PAUDIO pAudio, BOOL bLoop);
 
