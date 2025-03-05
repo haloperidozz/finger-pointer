@@ -19,6 +19,7 @@
 #include <wincodec.h>
 #include <windowsx.h>
 
+#include "d2d1_vtbl.h"
 #include "helper.h"
 
 struct _SPRITE {
@@ -203,21 +204,17 @@ D2D1_SIZE_U Sprite_GetSize(CONST PSPRITE pSprite)
 
 D2D1_POINT_2F Sprite_GetCenterPoint(CONST PSPRITE pSprite)
 {
-    D2D1_SIZE_U size;
-
     if (pSprite == NULL) {
         return (D2D1_POINT_2F) {0};
     }
     
-    size = Sprite_GetSize(pSprite);
-
     return (D2D1_POINT_2F) {
-        .x = (FLOAT) size.width  / 2.0f,
-        .y = (FLOAT) size.height / 2.0f
+        .x = (FLOAT) pSprite->bitmapSize.width  / 2.0f,
+        .y = (FLOAT) pSprite->bitmapSize.height / 2.0f
     };
 }
 
-VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1RenderTarget *pRenderTarget)
+VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget)
 {
     D2D1_POINT_2F centerPoint;
     D2D1_MATRIX_3X2_F rotation, translation, transform;
@@ -232,9 +229,9 @@ VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1RenderTarget *pRenderTarget)
     MakeTranslateMatrixByPoint(pSprite->position, &translation);
     MultiplyMatrices(&translation, &rotation, &transform);
 
-    ID2D1RenderTarget_SetTransform(pRenderTarget, &transform);
+    ID2D1HwndRenderTarget_SetTransform(pRenderTarget, &transform);
 
-    ID2D1RenderTarget_DrawBitmap(
+    ID2D1HwndRenderTarget_DrawBitmap(
         pRenderTarget, pSprite->pBitmap, NULL, 1.0f,
         D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, NULL);
 }

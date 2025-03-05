@@ -85,7 +85,7 @@ static VOID FingerPointer_Render(PFINGERPOINTER pFingerPointer)
 
     ID2D1HwndRenderTarget_Clear(pFingerPointer->pRenderTarget, 0);
 
-    Sprite_DrawHwnd(pFingerPointer->pSprite, pFingerPointer->pRenderTarget);
+    Sprite_Draw(pFingerPointer->pSprite, pFingerPointer->pRenderTarget);
     
     ID2D1HwndRenderTarget_EndDraw(pFingerPointer->pRenderTarget, NULL, NULL);
 }

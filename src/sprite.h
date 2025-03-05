@@ -19,7 +19,7 @@
 
 #include <windows.h>
 
-#include "d2d1_vtbl.h"
+#include <d2d1.h>
 
 typedef struct _SPRITE SPRITE, *PSPRITE;
 
@@ -37,24 +37,8 @@ D2D1_SIZE_U Sprite_GetSize(CONST PSPRITE pSprite);
 
 D2D1_POINT_2F Sprite_GetCenterPoint(CONST PSPRITE pSprite);
 
-VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1RenderTarget *pRenderTarget);
+VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget);
 
 VOID Sprite_Destroy(PSPRITE pSprite);
-
-static VOID Sprite_DrawHwnd(CONST PSPRITE pSprite,
-                            ID2D1HwndRenderTarget *pHwndRenderTarget)
-{
-    ID2D1RenderTarget *pRenderTarget = NULL;
-
-    if (pHwndRenderTarget == NULL) {
-        return;
-    }
-
-    ID2D1HwndRenderTarget_QueryInterface(
-        pHwndRenderTarget,
-        &IID_ID2D1RenderTarget, (LPVOID*) &pRenderTarget);
-    
-    Sprite_Draw(pSprite, pRenderTarget);
-}
 
 #endif /* __SPRITE_H */
