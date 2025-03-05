@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(FingerPointer VERSION 1.0 LANGUAGES C)
+project(FingerPointer VERSION 1.1 LANGUAGES C)
 
 if(NOT WIN32)
     message(FATAL_ERROR "FingerPointer is intended for Windows only.")
