@@ -20,6 +20,7 @@
 
 #define IDR_POINTER_PNG         200
 #define IDR_EFFECT_WAV          201
+#define IDR_EFFECT_MOVE_WAV     202
 
 #define IDS_GITHUB_URL          300
 

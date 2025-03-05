@@ -45,13 +45,17 @@ typedef struct _FINGERPOINTER {
     PSPRITE                 pSprite;
     PTWEENER                pTweener;
     PTIMER                  pTimer;
-    PAUDIO                  pAudioEffect;
+    PAUDIO                  pEffect;
+    PAUDIO                  pEffectMove;
 
     NOTIFYICONDATA          nid;
 
     FLOAT                   fScale;
+
     D2D1_POINT_2F           position;
+    D2D1_POINT_2F           lastPosition;
     
+    BOOL                    bPressed;
     BOOL                    bInitialized;
     BOOL                    bShow;
     BOOL                    bUpdateScale;
@@ -92,6 +96,12 @@ static VOID FingerPointer_Render(PFINGERPOINTER pFingerPointer)
     ID2D1HwndRenderTarget_EndDraw(pFingerPointer->pRenderTarget, NULL, NULL);
 }
 
+static inline BOOL IsCursorMoved(PFINGERPOINTER pFingerPointer)
+{
+    return pFingerPointer->lastPosition.x != pFingerPointer->position.x ||
+           pFingerPointer->lastPosition.y != pFingerPointer->position.y;
+}
+
 static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
 {
     D2D1_SIZE_U size;
@@ -102,6 +112,14 @@ static VOID FingerPointer_Update(PFINGERPOINTER pFingerPointer, FLOAT fDelta)
     if (pFingerPointer == NULL || pFingerPointer->bInitialized == FALSE) {
         return;
     }
+
+    if (IsCursorMoved(pFingerPointer) && pFingerPointer->bPressed) {
+        Audio_PlayAsync(pFingerPointer->pEffectMove);
+    } else {
+        Audio_Stop(pFingerPointer->pEffectMove);
+    }
+
+    pFingerPointer->lastPosition = pFingerPointer->position;
 
     Sprite_SetPosition(pFingerPointer->pSprite, pFingerPointer->position);
 
@@ -175,12 +193,15 @@ FingerPointer_OnMouseWheel(PFINGERPOINTER pFingerPointer, SHORT zDelta)
 static LRESULT
 FingerPointer_OnLeftMouseButton(PFINGERPOINTER pFingerPointer, BOOL bPress)
 {
+    pFingerPointer->bPressed = bPress;
+    
     Tweener_Invert(pFingerPointer->pTweener, bPress);
 
     if (bPress == FALSE) {
-        Audio_Stop(pFingerPointer->pAudioEffect);
+        Audio_Stop(pFingerPointer->pEffect);
+        Audio_Stop(pFingerPointer->pEffectMove);
     } else {
-        Audio_PlayAsync(pFingerPointer->pAudioEffect);
+        Audio_PlayAsync(pFingerPointer->pEffect);
     }
 
     return 0;
@@ -230,9 +251,14 @@ static LRESULT FingerPointer_OnDestroy(PFINGERPOINTER pFingerPointer)
 {
     Shell_NotifyIcon(NIM_DELETE, &(pFingerPointer->nid));
 
-    if (pFingerPointer->pAudioEffect != NULL) {
-        Audio_Destroy(pFingerPointer->pAudioEffect);
-        pFingerPointer->pAudioEffect = NULL;
+    if (pFingerPointer->pEffectMove != NULL) {
+        Audio_Destroy(pFingerPointer->pEffectMove);
+        pFingerPointer->pEffectMove = NULL;
+    }
+
+    if (pFingerPointer->pEffect != NULL) {
+        Audio_Destroy(pFingerPointer->pEffect);
+        pFingerPointer->pEffect = NULL;
     }
 
     if (pFingerPointer->pTimer != NULL) {
@@ -367,14 +393,25 @@ static LRESULT FingerPointer_OnCreate(PFINGERPOINTER pFingerPointer)
         return -1;
     }
 
-    pFingerPointer->pAudioEffect = Audio_LoadFromResource(
+    pFingerPointer->pEffect = Audio_LoadFromResource(
         pFingerPointer->hInstance,
         MAKEINTRESOURCE(IDR_EFFECT_WAV), TEXT("WAVE"));
 
-    if (pFingerPointer->pAudioEffect == NULL) {
+    if (pFingerPointer->pEffect == NULL) {
         FingerPointer_OnDestroy(pFingerPointer);
         return -1;
     }
+
+    pFingerPointer->pEffectMove = Audio_LoadFromResource(
+        pFingerPointer->hInstance,
+        MAKEINTRESOURCE(IDR_EFFECT_MOVE_WAV), TEXT("WAVE"));
+
+    if (pFingerPointer->pEffectMove == NULL) {
+        FingerPointer_OnDestroy(pFingerPointer);
+        return -1;
+    }
+
+    Audio_SetLoop(pFingerPointer->pEffectMove, TRUE);
 
     /* ALT + H */
     RegisterHotKey(pFingerPointer->hWnd, 1, MOD_ALT | MOD_NOREPEAT, 0x48);
