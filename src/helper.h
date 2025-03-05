@@ -55,6 +55,18 @@ MakeTranslateMatrix(D2D1_POINT_2F point, D2D1_MATRIX_3X2_F *pResult)
 }
 
 static inline VOID
+MakeScaleMatrix(D2D1_SIZE_F size, D2D1_POINT_2F center,
+                D2D1_MATRIX_3X2_F *pResult)
+{
+    pResult->m11 = size.width;
+    pResult->m12 = 0.0f;
+    pResult->m21 = 0.0f;
+    pResult->m22 = size.height;
+    pResult->dx  = center.x - size.width  * center.x;
+    pResult->dy  = center.y - size.height * center.y;
+}
+
+static inline VOID
 MultiplyMatrices(D2D1_MATRIX_3X2_F *m1, D2D1_MATRIX_3X2_F *m2,
                  D2D1_MATRIX_3X2_F *pResult)
 {
