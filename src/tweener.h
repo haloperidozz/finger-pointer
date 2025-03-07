@@ -19,7 +19,7 @@
 
 #include <windows.h>
 
-typedef FLOAT (*PFNEASING)(FLOAT x);
+#include "easing.h"
 
 typedef struct _TWEENER TWEENER, *PTWEENER;
 

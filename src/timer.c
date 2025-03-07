@@ -16,6 +16,8 @@
 
 #include "timer.h"
 
+#include "helper.h"
+
 struct _TIMER {
     LARGE_INTEGER   frequency;
     LARGE_INTEGER   lastCount;
@@ -27,7 +29,7 @@ PTIMER Timer_Create(VOID)
 {
     PTIMER pTimer = NULL;
     
-    pTimer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TIMER));
+    pTimer = SafeAllocSizeof(TIMER);
 
     if (pTimer == NULL) {
         return NULL;
@@ -74,7 +76,5 @@ VOID Timer_Reset(PTIMER pTimer)
 
 VOID Timer_Destroy(PTIMER pTimer)
 {
-    if (pTimer != NULL) {
-        HeapFree(GetProcessHeap(), 0, pTimer);
-    }
+    SafeFree(pTimer);
 }

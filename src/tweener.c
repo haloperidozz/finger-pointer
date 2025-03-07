@@ -32,7 +32,7 @@ PTWEENER Tweener_Create(FLOAT fDuration, FLOAT fStart, FLOAT fTarget)
 {
     PTWEENER pTweener = NULL;
     
-    pTweener = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TWEENER));
+    pTweener = SafeAllocSizeof(TWEENER);
     
     if (pTweener == NULL) {
         return NULL;
@@ -110,7 +110,5 @@ VOID Tweener_Reset(PTWEENER pTweener)
 
 VOID Tweener_Destroy(PTWEENER pTweener)
 {
-    if (pTweener != NULL) {
-        HeapFree(GetProcessHeap(), 0, pTweener);
-    }
+    SafeFree(pTweener);
 }

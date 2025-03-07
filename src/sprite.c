@@ -20,6 +20,7 @@
 #include <windowsx.h>
 
 #include "d2d1_vtbl.h"
+#include "mat3x2f.h"
 #include "helper.h"
 
 struct _SPRITE {
@@ -139,7 +140,7 @@ PSPRITE Sprite_CreateFromResource(ID2D1HwndRenderTarget *pRenderTarget,
         goto cleanup;
     }
 
-    pSprite = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(SPRITE));
+    pSprite = SafeAllocSizeof(SPRITE);
 
     if (pSprite == NULL) {
         ID2D1Bitmap_Release(pBitmap);
@@ -155,25 +156,11 @@ PSPRITE Sprite_CreateFromResource(ID2D1HwndRenderTarget *pRenderTarget,
     pSprite->scale = (D2D1_SIZE_F) { 1.0f, 1.0f };
 
 cleanup:
-    if (pConverter != NULL) {
-        pConverter->lpVtbl->Release(pConverter);
-    }
-
-    if (pFrame != NULL) {
-        pFrame->lpVtbl->Release(pFrame);
-    }
-
-    if (pDecoder != NULL) {
-        pDecoder->lpVtbl->Release(pDecoder);
-    }
-
-    if (pStream != NULL) {
-        pStream->lpVtbl->Release(pStream);
-    }
-
-    if (pFactory != NULL) {
-        pFactory->lpVtbl->Release(pFactory);
-    }
+    COM_SafeRelease(pConverter);
+    COM_SafeRelease(pFrame);
+    COM_SafeRelease(pDecoder);
+    COM_SafeRelease(pStream);
+    COM_SafeRelease(pFactory);
 
     return pSprite;
 }
@@ -278,6 +265,6 @@ VOID Sprite_Destroy(PSPRITE pSprite)
     }
 
     ID2D1Bitmap_Release(pSprite->pBitmap);
-
-    HeapFree(GetProcessHeap(), 0, pSprite);
+    
+    SafeFree(pSprite);
 }

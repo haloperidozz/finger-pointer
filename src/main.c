@@ -27,7 +27,7 @@
 #include "audio.h"
 
 #include "d2d1_vtbl.h"
-#include "helper.h"
+#include "openurl.h"
 
 #include "resource.h"
 

@@ -16,24 +16,28 @@
 
 #include "audio.h"
 
-#include <windowsx.h>
+/***********************************************************************
+ * HACK: Temporary attempt to fix
+ * "undefined reference to 'IID_IMFPMediaPlayerCallback'" on MinGW
+ ***********************************************************************/
+
+#if __MINGW32__
+#include <initguid.h>
+#endif /* __MINGW32__ */
+
 #include <mfapi.h>
 #include <mfplay.h>
+
+#if __MINGW32__
+#undef INITGUID
+#endif /* __MINGW32__ */
+
+#include <windowsx.h>
 #include <shlwapi.h>
 
 #include "helper.h"
 
-struct _AUDIO {
-    IMFPMediaPlayer    *pPlayer;
-    BOOL                bLoop;
-    BOOL                bPlaying;
-};
-
-struct _AUDIOCALLBACK {
-    IMFPMediaPlayerCallback iface;
-    LONG                    lRefCount;
-    PAUDIO                  pAudio; 
-};
+#if __MINGW32__
 
 /***********************************************************************
  * MFCreateMFByteStreamOnStream
@@ -42,34 +46,44 @@ struct _AUDIOCALLBACK {
  * a definition for the MFCreateMFByteStreamOnStream function.
  ***********************************************************************/
 
-#if __MINGW32__
-
 typedef HRESULT (*MFCreateMFByteStreamOnStream_t)(IStream*, IMFByteStream**);
 
 static HRESULT
 MFCreateMFByteStreamOnStream(IStream *pStream, IMFByteStream **ppByteStream)
 {
-    HMODULE hMfplat = LoadLibrary(TEXT("mfplat.dll"));
-    FARPROC fpAddress = NULL;
+    HMODULE hModule = LoadLibraryA("mfplat.dll");
+    FARPROC fpProc;
 
-    if (hMfplat == NULL) {
+    if (hModule == NULL) {
+        return E_FAIL;
+    }
+    
+    fpProc = GetProcAddress(hModule, "MFCreateMFByteStreamOnStream");
+
+    if (fpProc == NULL) {
         return E_FAIL;
     }
 
-    fpAddress = GetProcAddress(hMfplat, "MFCreateMFByteStreamOnStream");
-
-    if (fpAddress == NULL) {
-        return E_FAIL;
-    }
-
-    return ((MFCreateMFByteStreamOnStream_t) fpAddress)(pStream, ppByteStream);
+    return ((MFCreateMFByteStreamOnStream_t) fpProc)(pStream, ppByteStream);
 }
 
 #endif /* __MINGW32__ */
 
+struct _AUDIO {
+    IMFPMediaPlayer    *pPlayer;
+    BOOL                bLoop;
+    BOOL                bPlaying;
+};
+
 /***********************************************************************
  * Audio Callback
  ***********************************************************************/
+
+struct _AUDIOCALLBACK {
+    IMFPMediaPlayerCallback iface;
+    LONG                    lRefCount;
+    PAUDIO                  pAudio; 
+};
 
 static STDMETHODIMP_(ULONG)
 AudioCallback_AddRef(IMFPMediaPlayerCallback *pThis)
@@ -87,7 +101,7 @@ AudioCallback_Release(IMFPMediaPlayerCallback *pThis)
     ulCount = InterlockedDecrement(&pCallback->lRefCount);
 
     if (ulCount == 0) {
-        HeapFree(GetProcessHeap(), 0, pCallback);
+        SafeFree(pCallback);
     }
 
     return ulCount;
@@ -135,8 +149,7 @@ static IMFPMediaPlayerCallback *AudioCallback_Create(PAUDIO pAudio)
 {
     struct _AUDIOCALLBACK *pCallback = NULL;
 
-    pCallback = HeapAlloc(
-        GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct _AUDIOCALLBACK));
+    pCallback = SafeAllocSizeof(struct _AUDIOCALLBACK);
 
     if (pCallback == NULL) {
         return NULL;
@@ -153,14 +166,30 @@ static IMFPMediaPlayerCallback *AudioCallback_Create(PAUDIO pAudio)
  * Audio
  ***********************************************************************/
 
+static IStream* CreateIStreamFromResource(
+    HINSTANCE hInstance,
+    LPCTSTR lpszName,
+    LPCTSTR lpszType)
+{
+    BYTE* pbResourceData = NULL;
+    DWORD dwResourceSize = 0;
+
+    pbResourceData = LoadResourceToMemory(
+        hInstance, lpszName, lpszType, &dwResourceSize);
+    
+    if (pbResourceData == NULL) {
+        return NULL;
+    }
+
+    return SHCreateMemStream(pbResourceData, dwResourceSize);
+}
+
 PAUDIO Audio_LoadFromResource(HINSTANCE hInstance,
                               LPCTSTR lpszName,
                               LPCTSTR lpszType)
 {
     PAUDIO pAudio = NULL;
-    LPVOID pResourceData = NULL;
-    DWORD dwResourceSize = 0;
-    IStream *pStream = NULL;
+    IStream *pIStream = NULL;
     IMFSourceResolver *pResolver = NULL;
     IMFPMediaItem *pMediaItem = NULL;
     IMFByteStream *pByteStream = NULL;
@@ -168,14 +197,13 @@ PAUDIO Audio_LoadFromResource(HINSTANCE hInstance,
     MF_OBJECT_TYPE objectType = MF_OBJECT_INVALID;
     HRESULT hResult = S_OK;
 
-    pResourceData = LoadResourceToMemory(
-        hInstance, lpszName, lpszType, &dwResourceSize);
+    pIStream = CreateIStreamFromResource(hInstance, lpszName, lpszType);
     
-    if (pResourceData == NULL) {
+    if (pIStream == NULL) {
         return NULL;
     }
 
-    pAudio = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(AUDIO));
+    pAudio = SafeAllocSizeof(AUDIO);
 
     if (pAudio == NULL) {
         return NULL;
@@ -183,13 +211,7 @@ PAUDIO Audio_LoadFromResource(HINSTANCE hInstance,
 
     pAudio->bLoop = FALSE;
 
-    pStream = SHCreateMemStream((const BYTE*) pResourceData, dwResourceSize);
-
-    if (pStream == NULL) {
-        goto cleanup;
-    }
-
-    hResult = MFCreateMFByteStreamOnStream(pStream, &pByteStream);
+    hResult = MFCreateMFByteStreamOnStream(pIStream, &pByteStream);
 
     if (FAILED(hResult)) {
         goto cleanup;
@@ -242,28 +264,14 @@ PAUDIO Audio_LoadFromResource(HINSTANCE hInstance,
     }
 
 cleanup:
-    if (pResolver != NULL) {
-        pResolver->lpVtbl->Release(pResolver);
-    }
+    COM_SafeRelease(pResolver);
+    COM_SafeRelease(pSourceUnk);
+    COM_SafeRelease(pMediaItem);
+    COM_SafeRelease(pByteStream);
+    COM_SafeRelease(pIStream);
 
-    if (pSourceUnk != NULL) {
-        pSourceUnk->lpVtbl->Release(pSourceUnk);
-    }
-
-    if (pMediaItem != NULL) {
-        pMediaItem->lpVtbl->Release(pMediaItem);
-    }
-
-    if (pByteStream != NULL) {
-        pByteStream->lpVtbl->Release(pByteStream);
-    }
-
-    if (pStream != NULL) {
-        pStream->lpVtbl->Release(pStream);
-    }
-
-    if (FAILED(hResult) && pAudio != NULL) {
-        HeapFree(GetProcessHeap(), 0, pAudio);
+    if (FAILED(hResult)) {
+        SafeFree(pAudio);
         return NULL;
     }
 
@@ -305,7 +313,8 @@ VOID Audio_Destroy(PAUDIO pAudio)
     }
 
     pAudio->pPlayer->lpVtbl->Shutdown(pAudio->pPlayer);
-    pAudio->pPlayer->lpVtbl->Release(pAudio->pPlayer);
 
-    HeapFree(GetProcessHeap(), 0, pAudio);
+    COM_SafeRelease(pAudio->pPlayer);
+
+    SafeFree(pAudio);
 }
