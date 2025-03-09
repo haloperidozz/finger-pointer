@@ -20,32 +20,40 @@
 
 #include "application.h"
 
-INT APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                       PTSTR lpCmdLine, int nCmdShow)
+INT APIENTRY _tWinMain(
+    HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    PTSTR lpCmdLine,
+    INT nCmdShow)
 {
-    HANDLE hMutex = NULL;
+    HANDLE      hMutex = NULL;
+    Application application;
 
-    HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-
-    hMutex = CreateMutex(NULL, TRUE, TEXT("FingerPointer_ONCE"));
+    hMutex = CreateMutex(NULL, TRUE, TEXT("FingerPointer_Instance"));
 
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         return -1;
     }
 
     if (FAILED(CoInitialize(NULL))) {
+        ReleaseMutex(hMutex);
         return -1;
     }
 
     if (FAILED(MFStartup(MF_VERSION, MFSTARTUP_LITE))) {
+        CoUninitialize();
+        ReleaseMutex(hMutex);
         return -1;
     }
 
-    if (Application_CreateWindow(hInstance) == NULL) {
+    if (FAILED(application.Initialize(hInstance))) {
+        MFShutdown();
+        CoUninitialize();
+        ReleaseMutex(hMutex);
         return -1;
     }
 
-    Application_RunMessageLoop();
+    application.RunMessageLoop();
 
     MFShutdown();
     CoUninitialize();

@@ -17,24 +17,24 @@
 #ifndef __EASING_H
 #define __EASING_H
 
-#include <windows.h>
+#include <Windows.h>
 #include <math.h>
 
 typedef FLOAT (*PFNEASING)(FLOAT x);
 
-/***********************************************************************
- * Functions
- ***********************************************************************/
+namespace Easing {
 
-static FLOAT Easing_Linear(FLOAT x)
+static inline FLOAT Linear(FLOAT x)
 {
     return x;
 }
 
-/* Easing_EaseOutCirc: https://easings.net/#easeOutCirc */
-static FLOAT Easing_EaseOutCirc(FLOAT x)
+// https://easings.net/#easeOutCirc
+static inline FLOAT EaseOutCirc(FLOAT x)
 {
     return sqrtf(1.0f - powf(x - 1.0f, 2.0f));
 }
 
-#endif /* __EASING_H */
+} // namespace Easing
+
+#endif // __EASING_H

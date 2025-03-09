@@ -14,41 +14,25 @@
  * limitations under the License.
  */
 
-#ifndef __HELPER_H
-#define __HELPER_H
+#ifndef __RESOURCEX_H
+#define __RESOURCEX_H
 
-#include <windows.h>
-
-#define COM_SafeRelease(pInterface)                         \
-    do {                                                    \
-        if ((pInterface) != NULL) {                         \
-            (pInterface)->lpVtbl->Release(pInterface);      \
-            (pInterface) = NULL;                            \
-        }                                                   \
-    } while (FALSE)
-
-#define SafeAlloc(dwSize)                                   \
-    HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwSize)
-
-#define SafeAllocSizeof(type) SafeAlloc(sizeof(type))
-
-#define SafeFree(lpMemory)                                  \
-    do {                                                    \
-        if ((lpMemory) != NULL) {                           \
-            HeapFree(GetProcessHeap(), 0, (lpMemory));      \
-            (lpMemory) = NULL;                              \
-        }                                                   \
-    } while (FALSE)
+#include <Windows.h>
+#include <Shlwapi.h>
 
 static LPVOID LoadResourceToMemory(
-    HINSTANCE hInstance,
-    LPCTSTR lpszName,
-    LPCTSTR lpszType,
-    LPDWORD lpdwSize)
+    HINSTANCE   hInstance,
+    LPCTSTR     lpszName,
+    LPCTSTR     lpszType,
+    LPDWORD     lpdwSize)
 {
     HRSRC   hResource = NULL;
     HGLOBAL hResourceData = NULL;
     DWORD   dwResourceSize;
+
+    if (lpszName == NULL || lpszType == NULL) {
+        return NULL;
+    }
 
     hResource = FindResource(hInstance, lpszName, lpszType);
 
@@ -73,4 +57,29 @@ static LPVOID LoadResourceToMemory(
     return LockResource(hResourceData);
 }
 
-#endif /* __HELPER_H */
+static IStream* CreateIStreamFromResource(
+    HINSTANCE   hInstance,
+    LPCTSTR     lpszName,
+    LPCTSTR     lpszType)
+{
+    BYTE* pbResourceData = NULL;
+    DWORD dwResourceSize = 0;
+
+    if (lpszName == NULL || lpszType == NULL) {
+        return NULL;
+    }
+
+    pbResourceData = (BYTE*) LoadResourceToMemory(
+        hInstance,
+        lpszName,
+        lpszType,
+        &dwResourceSize);
+    
+    if (pbResourceData == NULL) {
+        return NULL;
+    }
+
+    return SHCreateMemStream(pbResourceData, dwResourceSize);
+}
+
+#endif // __RESOURCEX_H

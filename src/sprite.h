@@ -17,35 +17,55 @@
 #ifndef __SPRITE_H
 #define __SPRITE_H
 
-#include <windows.h>
-
+#include <Windows.h>
+#include <wincodec.h>
 #include <d2d1.h>
 
-typedef struct _SPRITE SPRITE, *PSPRITE;
+class Sprite
+{
+public:
+    static HRESULT CreateSpriteFromResource(
+        ID2D1HwndRenderTarget*  pHwndRenderTarget,
+        LPCTSTR                 lpszName,
+        LPCTSTR                 lpszType,
+        Sprite**                ppSprite);
 
-PSPRITE Sprite_CreateFromResource(ID2D1HwndRenderTarget *pRenderTarget,
-                                  LPCTSTR lpszName,
-                                  LPCTSTR lpszType);
+    static HRESULT CreateSpriteFromIWICBitmapSource(
+        ID2D1RenderTarget*  pRenderTarget,
+        IWICBitmapSource*   pBitmapSource,
+        Sprite**            ppSprite);
 
-VOID Sprite_SetPosition(PSPRITE pSprite, D2D1_POINT_2F position);
-D2D1_POINT_2F Sprite_GetPosition(CONST PSPRITE pSprite);
+    ~Sprite();
 
-VOID Sprite_SetRotation(PSPRITE pSprite, FLOAT fAngle);
-FLOAT Sprite_GetRotation(CONST PSPRITE pSprite);
+    VOID SetPosition(CONST D2D1_POINT_2F& position);
+    D2D1_POINT_2F GetPosition() CONST;
 
-VOID Sprite_SetRotationCenter(PSPRITE pSprite, D2D1_POINT_2F center);
-D2D1_POINT_2F Sprite_GetRotationCenter(CONST PSPRITE pSprite);
+    VOID SetRotation(FLOAT fAngle);
+    FLOAT GetRotation() CONST;
 
-VOID Sprite_SetScale(PSPRITE pSprite, D2D1_SIZE_F scale);
-D2D1_SIZE_F Sprite_GetScale(CONST PSPRITE pSprite);
+    VOID SetRotationCenter(CONST D2D1_POINT_2F& center);
+    D2D1_POINT_2F GetRotationCenter() CONST;
 
-VOID Sprite_SetScaleCenter(PSPRITE pSprite, D2D1_POINT_2F center);
-D2D1_POINT_2F Sprite_GetScaleCenter(CONST PSPRITE pSprite);
+    VOID SetScale(CONST D2D1_SIZE_F& scale);
+    D2D1_SIZE_F GetScale() CONST;
 
-D2D1_SIZE_U Sprite_GetBitmapSize(CONST PSPRITE pSprite);
+    VOID SetScaleCenter(CONST D2D1_POINT_2F& center);
+    D2D1_POINT_2F GetScaleCenter() CONST;
 
-VOID Sprite_Draw(CONST PSPRITE pSprite, ID2D1HwndRenderTarget *pRenderTarget);
+    D2D1_SIZE_U GetBitmapSize() CONST;
 
-VOID Sprite_Destroy(PSPRITE pSprite);
+    HRESULT Draw(ID2D1RenderTarget* pRenderTarget);
+    
+private:
+    Sprite();
 
-#endif /* __SPRITE_H */
+    ID2D1Bitmap*    _pBitmap;
+    D2D1_SIZE_U     _bitmapSize;
+    D2D1_POINT_2F   _position;
+    D2D1_SIZE_F     _scale;
+    D2D1_POINT_2F   _scaleCenter;
+    FLOAT           _fRotation;
+    D2D1_POINT_2F   _rotationCenter;
+};
+
+#endif // __SPRITE_H

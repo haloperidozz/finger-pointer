@@ -17,18 +17,23 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-#include <windows.h>
+#include <Windows.h>
 
-typedef struct _TIMER TIMER, *PTIMER;
+class Timer {
+public:
+    Timer();
 
-PTIMER Timer_Create(VOID);
+    void Tick();
 
-VOID Timer_Tick(PTIMER pTimer);
+    FLOAT GetDeltaTime() CONST;
 
-FLOAT Timer_GetDeltaTime(CONST PTIMER pTimer);
+    VOID Reset();
 
-VOID Timer_Reset(PTIMER pTimer);
+private:
+    LARGE_INTEGER   _frequency;
+    LARGE_INTEGER   _lastCount;
+    LARGE_INTEGER   _currentCount;
+    FLOAT           _fDeltaTime;
+};
 
-VOID Timer_Destroy(PTIMER pTimer);
-
-#endif /* __TIMER_H */
+#endif // __TIMER_H

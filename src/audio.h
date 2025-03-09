@@ -17,22 +17,64 @@
 #ifndef __AUDIO_H
 #define __AUDIO_H
 
-#include <windows.h>
+#include <Windows.h>
+#include <mfplay.h>
 
-typedef struct _AUDIO AUDIO, *PAUDIO;
+class Audio;
 
-PAUDIO Audio_LoadFromResource(HINSTANCE hInstance,
-                              LPCTSTR lpszName,
-                              LPCTSTR lpszType);
+class AudioCallback : public IMFPMediaPlayerCallback
+{
+public:
+    AudioCallback(Audio* pAudio);
 
-VOID Audio_PlayAsync(PAUDIO pAudio);
+    STDMETHODIMP QueryInterface(REFIID riid, VOID** ppV);
 
-VOID Audio_Stop(PAUDIO pAudio);
+    STDMETHODIMP_(ULONG) AddRef();
 
-BOOL Audio_IsPlaying(CONST PAUDIO pAudio);
+    STDMETHODIMP_(ULONG) Release();
 
-VOID Audio_SetLoop(PAUDIO pAudio, BOOL bLoop);
+    STDMETHODIMP_(VOID)
+    OnMediaPlayerEvent(MFP_EVENT_HEADER* pEventHeader);
 
-VOID Audio_Destroy(PAUDIO pAudio);
+private:
+    LONG            _lRefCount;
+    Audio*          _pAudio; 
+};
 
-#endif /* __AUDIO_H */
+class Audio
+{
+    friend class AudioCallback;
+
+public:
+    static HRESULT CreateAudioFromSourceObject(
+        IUnknown*   pSourceUnk,
+        Audio**     ppAudio);
+
+    static HRESULT CreateAudioFromResource(
+        HINSTANCE   hInstance,
+        LPCTSTR     lpszName,
+        LPCTSTR     lpszType,
+        Audio**     ppAudio);
+        
+    ~Audio();
+
+    VOID Play();
+
+    VOID Stop();
+
+    VOID SetLoop(BOOL bLoop);
+    BOOL GetLoop() CONST;
+
+    BOOL IsPlaying() CONST;
+
+private:
+    Audio();
+
+    HRESULT InitializePlayer();
+
+    IMFPMediaPlayer*    _pPlayer;
+    BOOL                _bLoop;
+    BOOL                _bPlaying;
+};
+
+#endif // __AUDIO_H

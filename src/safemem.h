@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
+#ifndef __SAFEMEM_H
+#define __SAFEMEM_H
+
 #include <Windows.h>
 
-#define IDI_ICON                100
+template<class Interface>
+inline void SafeRelease(Interface** ppInterfaceToRelease)
+{
+    if (*ppInterfaceToRelease != NULL) {
+        (*ppInterfaceToRelease)->Release();
+        (*ppInterfaceToRelease) = NULL;
+    }
+}
 
-#define IDR_POINTER_PNG         200
-#define IDR_EFFECT_WAV          201
-#define IDR_EFFECT_MOVE_WAV     202
+template<class Pointer>
+inline void SafeDelete(Pointer** ppPointerToDelete)
+{
+    if (*ppPointerToDelete != NULL) {
+        delete (*ppPointerToDelete);
+        (*ppPointerToDelete) = NULL;
+    }
+}
 
-#define IDS_GITHUB_URL          300
-#define IDS_TELEGRAM_URL        301
-#define IDS_TIKTOK_URL          302
-
-#define IDM_MENU_MAIN           400
-
-#define IDM_ITEM_SHOW           500
-#define IDM_ITEM_SOURCE_CODE    501
-#define IDM_ITEM_TIKTOK         502
-#define IDM_ITEM_TELEGRAM       503
-#define IDM_ITEM_EXIT           504
+#endif // __SAFEMEM_H

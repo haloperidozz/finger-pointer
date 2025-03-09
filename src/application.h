@@ -17,10 +17,68 @@
 #ifndef __APPLICATION_H
 #define __APPLICATION_H
 
-#include <windows.h>
+#include <Windows.h>
+#include <d2d1.h>
 
-HWND Application_CreateWindow(HINSTANCE hInstance);
+#include "sprite.h"
+#include "audio.h"
+#include "tweener.h"
+#include "timer.h"
+#include "pointer.h"
 
-VOID Application_RunMessageLoop(VOID);
+class Application {
+public:
+    Application();
 
-#endif /* __APPLICATION_H */
+    HRESULT Initialize(HINSTANCE hInstance);
+
+    VOID RunMessageLoop();
+
+private:
+    static LRESULT CALLBACK WndProc(
+        HWND hWnd,
+        UINT uMsg,
+        WPARAM wParam,
+        LPARAM lParam);
+
+    VOID ToggleWindowVisibility();
+
+    ///////////////////////////////////////////////////////////////
+
+    VOID OnRender();
+
+    VOID OnUpdate(FLOAT fDelta);
+
+    ///////////////////////////////////////////////////////////////
+
+    LRESULT OnCreate(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnTrayIcon(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnMouseWheel(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnLeftButtonDown(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnLeftButtonUp(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnHotkey(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnCommand(WPARAM wParam, LPARAM lParam);
+
+    LRESULT OnDestroy(WPARAM wParam, LPARAM lParam);
+
+    ///////////////////////////////////////////////////////////////
+    
+    HWND                    _hWnd;
+    HINSTANCE               _hInstance;
+    ID2D1HwndRenderTarget*  _pRenderTarget;
+    ID2D1Factory*           _pFactory;    
+    Timer                   _timer;
+    Pointer                 _pointer;
+    NOTIFYICONDATA          _nid;
+    BOOL                    _bShow;
+};
+
+#endif // __APPLICATION_H

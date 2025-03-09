@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(FingerPointer VERSION 1.1 LANGUAGES C)
+project(FingerPointer VERSION 1.1 LANGUAGES CXX)
 
 if(NOT WIN32)
     message(FATAL_ERROR "FingerPointer is intended for Windows only.")
@@ -9,13 +9,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 
-file(GLOB SRC_FILES ${SRC_DIR}/*.c ${SRC_DIR}/resource.rc)
+file(GLOB SRC_FILES ${SRC_DIR}/*.cpp ${SRC_DIR}/resource.rc)
 
 add_executable(FingerPointer WIN32 ${SRC_FILES})
 
 target_compile_definitions(FingerPointer PRIVATE _UNICODE UNICODE)
 
-target_compile_features(FingerPointer PRIVATE c_std_99)
+target_compile_features(FingerPointer PRIVATE cxx_std_98)
 
 target_include_directories(FingerPointer PRIVATE ${SRC_DIR})
 

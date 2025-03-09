@@ -17,24 +17,36 @@
 #ifndef __TWEENER_H
 #define __TWEENER_H
 
-#include <windows.h>
+#include <Windows.h>
 
 #include "easing.h"
 
-typedef struct _TWEENER TWEENER, *PTWEENER;
+class Tweener {
+public:
+    Tweener(
+        FLOAT       fDuration,
+        FLOAT       fStart,
+        FLOAT       fTarget,
+        PFNEASING   pfnEasing = Easing::Linear);
 
-PTWEENER Tweener_Create(FLOAT fDuration, FLOAT fStart, FLOAT fTarget);
+    BOOL Update(FLOAT fDeltaTime);
 
-BOOL Tweener_Update(PTWEENER pTweener, FLOAT fDeltaTime);
+    FLOAT GetValue() CONST;
 
-VOID Tweener_Invert(PTWEENER pTweener, BOOL bInvert);
+    VOID Invert(BOOL bInvert);
 
-FLOAT Tweener_GetValue(CONST PTWEENER pTweener);
+    void SetEasing(PFNEASING pfnEasing);
 
-VOID Tweener_SetEasing(PTWEENER pTweener, PFNEASING pfnEasing);
+    void Reset();
 
-VOID Tweener_Reset(PTWEENER pTweener);
+private:
+    FLOAT       _fDuration;
+    FLOAT       _fStart;
+    FLOAT       _fTarget;
+    FLOAT       _fProgress;
+    FLOAT       _fValue;
+    BOOL        _bInverted;
+    PFNEASING   _pfnEasing;
+};
 
-VOID Tweener_Destroy(PTWEENER pTweener);
-
-#endif /* __TWEENER_H */
+#endif // __TWEENER_H

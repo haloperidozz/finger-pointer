@@ -14,26 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef __OPENURL_H
-#define __OPENURL_H
+#include "timer.h"
 
-#include <windows.h>
-
-#define OU_DEFAULT      0x0
-#define OU_RESOURCE     0x1
-
-static VOID OpenUrl(LPCTSTR lpszUrl, DWORD dwFlags)
+Timer::Timer()
 {
-    TCHAR szBuffer[256];
-    UINT uResourceId;
-
-    if (dwFlags & OU_RESOURCE) {
-        uResourceId = (UINT) (WORD) (ULONG_PTR) lpszUrl;
-        LoadString(GetModuleHandle(NULL), uResourceId, szBuffer, 256);
-        lpszUrl = szBuffer;
-    }
-
-    ShellExecute(NULL, TEXT("open"), lpszUrl, NULL, NULL, SW_SHOWNORMAL);
+    QueryPerformanceFrequency(&_frequency);
+    Reset();
 }
 
-#endif /* __OPENURL_H */
+void Timer::Tick()
+{
+    LONGLONG llElapsed;
+
+    QueryPerformanceCounter(&_currentCount);
+    llElapsed = _currentCount.QuadPart - _lastCount.QuadPart;
+    _fDeltaTime = (FLOAT) llElapsed / (FLOAT) _frequency.QuadPart;
+    _lastCount = _currentCount;
+}
+
+FLOAT Timer::GetDeltaTime() const
+{
+    return _fDeltaTime;
+}
+
+VOID Timer::Reset()
+{
+    QueryPerformanceCounter(&_lastCount);
+    _fDeltaTime = 0.0f;
+}
