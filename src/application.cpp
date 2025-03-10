@@ -102,7 +102,7 @@ HRESULT Application::Initialize(HINSTANCE hInstance)
         DwmExtendFrameIntoClientArea(_hWnd, &margins);
     }
 
-    return S_OK;
+    return (_hWnd != NULL) ? S_OK : S_FALSE;
 }
 
 VOID Application::RunMessageLoop()
