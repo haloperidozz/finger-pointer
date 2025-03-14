@@ -118,6 +118,7 @@ BOOL TrayIcon::ShowNotification(LPCTSTR szInfo, LPCTSTR szTitle)
     nid.hWnd   = _hWnd;
     nid.uID    = _uId;
     nid.uFlags = NIF_INFO;
+    nid.dwInfoFlags = NIIF_NONE;
 
     lstrcpyn(nid.szInfo, szInfo, ARRAYSIZE(nid.szInfo));
     lstrcpyn(nid.szInfoTitle, szTitle, ARRAYSIZE(nid.szInfoTitle));
