@@ -25,9 +25,18 @@ IDR_EFFECT_MOVE_WAV     WAVE                "../res/effect_move.wav"
 
 STRINGTABLE
 BEGIN
+    IDS_TITLE,          "FingerPointer"
+
     IDS_GITHUB_URL,     "https://github.com/haloperidozz/finger-pointer"
     IDS_TELEGRAM_URL,   "https://t.me/haloperidozz"
     IDS_TIKTOK_URL,     "https://www.tiktok.com/@haloperidozz"
+
+    IDS_NOTIFY_TITLE,   "How to use:"
+    IDS_NOTIFY_INFO,    "\
+ALT + H - Toggle pointer visibility\r\n\
+ALT + M - Toggle marker visibility\r\n\
+Mouse Wheel - Resize pointer\0\
+                        "
 END
 
 IDM_MENU_MAIN MENU 

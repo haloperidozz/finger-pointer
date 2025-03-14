@@ -26,9 +26,10 @@
 #define FINGERPOINTER_CLASSNAME     TEXT("FingerPointerClass")
 
 #define UM_TRAYICON                 (WM_USER + 1)
+#define ID_TRAYICON                 1001
 
-#define HK_TOGGLE_VISIBILITY        1
-#define HK_TOGGLE_MARKER            2
+#define HK_TOGGLE_VISIBILITY        1   // ALT + H
+#define HK_TOGGLE_MARKER            2   // ALT + M
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenUrl
@@ -41,13 +42,6 @@ static VOID OpenUrl(LPCTSTR lpszUrl)
     }
 
     ShellExecute(NULL, TEXT("open"), lpszUrl, NULL, NULL, SW_SHOWNORMAL);
-}
-
-static VOID OpenUrl(HINSTANCE hInstance, UINT uResourceId)
-{
-    TCHAR szBuffer[MAX_PATH];
-    LoadString(hInstance, uResourceId, szBuffer, MAX_PATH);
-    OpenUrl(szBuffer);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -68,6 +62,7 @@ HRESULT Application::Initialize(HINSTANCE hInstance)
     WNDCLASSEX  wcex = {0};
     MARGINS     margins = {-1};
     HICON       hIcon = NULL;
+    TCHAR       szTitle[512];
 
     hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
 
@@ -86,10 +81,12 @@ HRESULT Application::Initialize(HINSTANCE hInstance)
         return S_FALSE;
     }
 
+    LoadString(hInstance, IDS_TITLE, szTitle, ARRAYSIZE(szTitle));
+
     _hWnd = CreateWindowEx(
         WS_EX_APPWINDOW | WS_EX_TOPMOST,
         FINGERPOINTER_CLASSNAME,
-        NULL,
+        szTitle,
         WS_POPUP,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -165,8 +162,10 @@ LRESULT Application::OnCreate(WPARAM wParam, LPARAM lParam)
     D2D1_RENDER_TARGET_PROPERTIES       renderTargetProps;
     D2D1_HWND_RENDER_TARGET_PROPERTIES  hwndRenderTargetProps;
     D2D1_PIXEL_FORMAT                   pixelFormat;
-    RECT                                rc;
     D2D1_SIZE_F                         pointerSize;
+    RECT                                rc;
+    TCHAR                               szInfo[1024];
+    TCHAR                               szTitle[512];
     HRESULT                             hResult = S_OK;
 
     hResult = D2D1CreateFactory(
@@ -224,10 +223,14 @@ LRESULT Application::OnCreate(WPARAM wParam, LPARAM lParam)
         MOD_ALT | MOD_NOREPEAT,
         0x4D /* M */);
 
-    if (_trayIcon.Add(_hWnd, UM_TRAYICON, 1001) == FALSE) {
+    if (_trayIcon.Add(_hWnd, UM_TRAYICON, ID_TRAYICON) == FALSE) {
         goto destroy;
     }
 
+    LoadString(_hInstance, IDS_NOTIFY_INFO, szInfo, ARRAYSIZE(szInfo));
+    LoadString(_hInstance, IDS_NOTIFY_TITLE, szTitle, ARRAYSIZE(szTitle));
+
+    _trayIcon.ShowNotification(szInfo, szTitle); 
     return 0;
 
 destroy:
@@ -351,18 +354,23 @@ LRESULT Application::OnHotkey(WPARAM wParam, LPARAM lParam)
 
 LRESULT Application::OnCommand(WPARAM wParam, LPARAM lParam)
 {
+    TCHAR szUrl[MAX_PATH];
+
     switch (LOWORD(wParam)) {
         case IDM_ITEM_SHOW:
             ToggleWindowVisibility();
             break;
         case IDM_ITEM_SOURCE_CODE:
-            OpenUrl(_hInstance, IDS_GITHUB_URL);
+            LoadString(_hInstance, IDS_GITHUB_URL, szUrl, MAX_PATH);
+            OpenUrl(szUrl);
             break;
         case IDM_ITEM_TELEGRAM:
-            OpenUrl(_hInstance, IDS_TELEGRAM_URL);
+            LoadString(_hInstance, IDS_TELEGRAM_URL, szUrl, MAX_PATH);
+            OpenUrl(szUrl);
             break;
         case IDM_ITEM_TIKTOK:
-            OpenUrl(_hInstance, IDS_TIKTOK_URL);
+            LoadString(_hInstance, IDS_TIKTOK_URL, szUrl, MAX_PATH);
+            OpenUrl(szUrl);
             break;
         case IDM_ITEM_EXIT:
             DestroyWindow(_hWnd);

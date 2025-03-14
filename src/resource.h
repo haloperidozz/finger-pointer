@@ -22,9 +22,12 @@
 #define IDR_EFFECT_WAV          201
 #define IDR_EFFECT_MOVE_WAV     202
 
-#define IDS_GITHUB_URL          300
-#define IDS_TELEGRAM_URL        301
-#define IDS_TIKTOK_URL          302
+#define IDS_TITLE               300
+#define IDS_GITHUB_URL          301
+#define IDS_TELEGRAM_URL        302
+#define IDS_TIKTOK_URL          303
+#define IDS_NOTIFY_TITLE        304
+#define IDS_NOTIFY_INFO         305
 
 #define IDM_MENU_MAIN           400
 
