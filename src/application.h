@@ -25,6 +25,7 @@
 #include "tweener.h"
 #include "timer.h"
 #include "pointer.h"
+#include "trayicon.h"
 
 class Application {
 public:
@@ -77,7 +78,7 @@ private:
     ID2D1Factory*           _pFactory;    
     Timer                   _timer;
     Pointer                 _pointer;
-    NOTIFYICONDATA          _nid;
+    TrayIcon                _trayIcon;
     BOOL                    _bShow;
 };
 

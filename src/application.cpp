@@ -56,7 +56,6 @@ Application::Application()
       _hInstance(NULL),
       _pRenderTarget(NULL),
       _pFactory(NULL),
-      _nid({0}),
       _bShow(FALSE)
 {
 }
@@ -212,17 +211,7 @@ LRESULT Application::OnCreate(WPARAM wParam, LPARAM lParam)
 
     RegisterHotKey(_hWnd, 1, MOD_ALT | MOD_NOREPEAT, 0x48 /* H */);
 
-    _nid.cbSize           = sizeof(NOTIFYICONDATA);
-    _nid.hWnd             = _hWnd;
-    _nid.uID              = 1;
-    _nid.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-    _nid.uCallbackMessage = UM_TRAYICON;
-
-    GetWindowText(_hWnd, _nid.szTip, 128);
-
-    _nid.hIcon = (HICON) GetClassLongPtr(_hWnd, GCLP_HICON);
-    
-    if (Shell_NotifyIcon(NIM_ADD, &_nid) == FALSE) {
+    if (_trayIcon.Add(_hWnd, UM_TRAYICON, 1001) == FALSE) {
         goto destroy;
     }
 
@@ -365,8 +354,6 @@ LRESULT Application::OnCommand(WPARAM wParam, LPARAM lParam)
 
 LRESULT Application::OnDestroy(WPARAM wParam, LPARAM lParam)
 {
-    Shell_NotifyIcon(NIM_DELETE, &_nid);
-
     SafeRelease(&_pRenderTarget);
     SafeRelease(&_pFactory);
 
