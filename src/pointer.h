@@ -34,7 +34,6 @@ public:
         HINSTANCE              hInstance);
 
     VOID Update(FLOAT fDelta);
-
     VOID Draw(ID2D1RenderTarget* pRenderTarget);
 
     D2D1_POINT_2F GetPosition();
@@ -45,19 +44,27 @@ public:
 
     D2D1_SIZE_F GetSize() CONST;
 
-    VOID SetPressed(BOOL bPressed);
+    VOID OnPress();
+    VOID OnRelease();
+
+    VOID ToggleMarker();
 
 private:
-    VOID UpdateScale();
+    Sprite*                 _pSprite;
+    Audio*                  _pEffect;
+    Audio*                  _pEffectMove;
+    Tweener                 _tweener;
 
-    Sprite*         _pSprite;
-    Audio*          _pEffect;
-    Audio*          _pEffectMove;
-    Tweener         _tweener;
-    D2D1_POINT_2F   _position;
-    D2D1_POINT_2F   _lastPosition;
-    FLOAT           _fScale;
-    BOOL            _bPressed;
+    ID2D1SolidColorBrush*   _markerBrush;
+
+    D2D1::ColorF            _markerColor;
+    D2D1_POINT_2F           _position;
+    D2D1_POINT_2F           _lastPosition;
+    D2D1_POINT_2F           _markerPosition;
+
+    FLOAT                   _fScale;
+    BOOL                    _bPressed;
+    BOOL                    _bShowMarker;
 };
 
 #endif // __POINTER_H

@@ -27,6 +27,9 @@
 
 #define UM_TRAYICON                 (WM_USER + 1)
 
+#define HK_TOGGLE_VISIBILITY        1
+#define HK_TOGGLE_MARKER            2
+
 ////////////////////////////////////////////////////////////////////////////
 // OpenUrl
 ////////////////////////////////////////////////////////////////////////////
@@ -209,7 +212,17 @@ LRESULT Application::OnCreate(WPARAM wParam, LPARAM lParam)
         (((FLOAT)(rc.bottom - rc.top)) - pointerSize.height) / 2.0f
     ));
 
-    RegisterHotKey(_hWnd, 1, MOD_ALT | MOD_NOREPEAT, 0x48 /* H */);
+    RegisterHotKey(
+        _hWnd,
+        HK_TOGGLE_VISIBILITY,
+        MOD_ALT | MOD_NOREPEAT,
+        0x48 /* H */);
+    
+    RegisterHotKey(
+        _hWnd,
+        HK_TOGGLE_MARKER,
+        MOD_ALT | MOD_NOREPEAT,
+        0x4D /* M */);
 
     if (_trayIcon.Add(_hWnd, UM_TRAYICON, 1001) == FALSE) {
         goto destroy;
@@ -313,19 +326,26 @@ LRESULT Application::OnMouseMove(WPARAM wParam, LPARAM lParam)
 
 LRESULT Application::OnLeftButtonDown(WPARAM wParam, LPARAM lParam)
 {
-    _pointer.SetPressed(TRUE);
+    _pointer.OnPress();
     return 0;
 }
 
 LRESULT Application::OnLeftButtonUp(WPARAM wParam, LPARAM lParam)
 {
-    _pointer.SetPressed(FALSE);
+    _pointer.OnRelease();
     return 0;
 }
 
 LRESULT Application::OnHotkey(WPARAM wParam, LPARAM lParam)
 {
-    ToggleWindowVisibility();
+    switch (wParam) {
+        case HK_TOGGLE_VISIBILITY:
+            ToggleWindowVisibility();
+            break;
+        case HK_TOGGLE_MARKER:
+            _pointer.ToggleMarker();
+            break;
+    }
     return 0;
 }
 

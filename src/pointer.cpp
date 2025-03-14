@@ -22,8 +22,10 @@
 
 Pointer::Pointer()
     : _tweener(0.25f, -45.0f, 0.0f, Easing::EaseOutCirc),
+      _markerColor(D2D1::ColorF::Red),
       _fScale(0.9f),
       _bPressed(FALSE),
+      _bShowMarker(TRUE),
       _pEffect(NULL),
       _pEffectMove(NULL),
       _pSprite(NULL)
@@ -73,9 +75,17 @@ HRESULT Pointer::InitializeResources(
         goto failed;
     }
 
+    hResult = pRenderTarget->CreateSolidColorBrush(
+        _markerColor,
+        &_markerBrush);
+    
+    if (FAILED(hResult)) {
+        goto failed;
+    }
+
     _pEffectMove->SetLoop(TRUE);
     
-    UpdateScale();
+    SetScale(_fScale);
 
 failed:
     if (FAILED(hResult)) {
@@ -89,10 +99,13 @@ failed:
 
 VOID Pointer::Update(FLOAT fDelta)
 {
+    BOOL bHasMoved = FALSE;
+
     if (_bPressed == TRUE) {
-        if (_lastPosition.x != _position.x ||
-            _lastPosition.y != _position.y
-        ) {
+        bHasMoved = _lastPosition.x != _position.x ||
+                    _lastPosition.y != _position.y;
+        
+        if (bHasMoved == TRUE) {
             _pEffectMove->Play();
         } else {
             _pEffectMove->Stop();
@@ -108,6 +121,12 @@ VOID Pointer::Update(FLOAT fDelta)
 
 VOID Pointer::Draw(ID2D1RenderTarget *pRenderTarget)
 {
+    if (_bShowMarker == TRUE) {
+        pRenderTarget->FillEllipse(
+            D2D1::Ellipse(_markerPosition, 1.0f, 1.0f), // 1px
+            _markerBrush);
+    }
+    
     _pSprite->Draw(pRenderTarget);
 }
 
@@ -118,8 +137,17 @@ D2D1_POINT_2F Pointer::GetPosition()
 
 VOID Pointer::SetPosition(CONST D2D1_POINT_2F &position)
 {
+    D2D1_POINT_2F markerPosition;
+
     _position = position;
     _pSprite->SetPosition(position);
+
+    // The values 45.0f and 35.0f were chosen empirically  
+    // TODO: They need to be somehow linked to the sprite size  
+    markerPosition.x = position.x - 45.0f * _fScale;
+    markerPosition.y = position.y + 35.0f * _fScale;
+
+    _markerPosition = markerPosition;
 }
 
 FLOAT Pointer::GetScale() CONST
@@ -129,8 +157,18 @@ FLOAT Pointer::GetScale() CONST
 
 VOID Pointer::SetScale(FLOAT fScale)
 {
+    D2D1_SIZE_U   bitmapSize;
+    D2D1_POINT_2F center;
+
     _fScale = fmaxf(0.0f, fminf(fScale, 1.0f));
-    UpdateScale();
+
+    bitmapSize = _pSprite->GetBitmapSize();
+
+    center.x = ((FLOAT) bitmapSize.width  * _fScale) / 2.0f;
+    center.y =  (FLOAT) bitmapSize.height * _fScale;
+
+    _pSprite->SetRotationCenter(center);
+    _pSprite->SetScale(D2D1::SizeF(_fScale, _fScale));
 }
 
 D2D1_SIZE_F Pointer::GetSize() CONST
@@ -146,30 +184,22 @@ D2D1_SIZE_F Pointer::GetSize() CONST
     return size;
 }
 
-VOID Pointer::SetPressed(BOOL bPressed)
+VOID Pointer::OnPress()
 {
-    _bPressed = bPressed;
-
-    _tweener.Invert(bPressed);
-
-    if (_bPressed == TRUE) {
-        _pEffect->Play();
-    } else {
-        _pEffect->Stop();
-        _pEffectMove->Stop();
-    }
+    _bPressed = TRUE;
+    _tweener.Invert(TRUE);
+    _pEffect->Play();
 }
 
-VOID Pointer::UpdateScale()
+VOID Pointer::OnRelease()
 {
-    D2D1_SIZE_U   bitmapSize;
-    D2D1_POINT_2F center;
+    _bPressed = FALSE;
+    _tweener.Invert(FALSE);
+    _pEffect->Stop();
+    _pEffectMove->Stop();
+}
 
-    bitmapSize = _pSprite->GetBitmapSize();
-
-    center.x = ((FLOAT) bitmapSize.width  * _fScale) / 2.0f;
-    center.y =  (FLOAT) bitmapSize.height * _fScale;
-
-    _pSprite->SetRotationCenter(center);
-    _pSprite->SetScale(D2D1::SizeF(_fScale, _fScale));
+VOID Pointer::ToggleMarker()
+{
+    _bShowMarker = !_bShowMarker;
 }
