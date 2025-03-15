@@ -32,7 +32,7 @@
 #define HK_TOGGLE_MARKER            2   // ALT + M
 
 ////////////////////////////////////////////////////////////////////////////
-// OpenUrl
+// Helper
 ////////////////////////////////////////////////////////////////////////////
 
 static VOID OpenUrl(LPCTSTR lpszUrl)
@@ -42,6 +42,26 @@ static VOID OpenUrl(LPCTSTR lpszUrl)
     }
 
     ShellExecute(NULL, TEXT("open"), lpszUrl, NULL, NULL, SW_SHOWNORMAL);
+}
+
+static VOID CenterCursor(HWND hRelWnd)
+{
+    RECT  rcClient;
+    POINT ptCenter;
+
+    if (hRelWnd != NULL) {
+        GetClientRect(hRelWnd, &rcClient);
+
+        ptCenter.x = (rcClient.right - rcClient.left) / 2;
+        ptCenter.y = (rcClient.bottom - rcClient.top) / 2;
+
+        ClientToScreen(hRelWnd, &ptCenter);
+    } else {
+        ptCenter.x = GetSystemMetrics(SM_CXSCREEN) / 2;
+        ptCenter.y = GetSystemMetrics(SM_CYSCREEN) / 2;
+    }
+
+    SetCursorPos(ptCenter.x, ptCenter.y);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -132,6 +152,7 @@ VOID Application::ToggleWindowVisibility()
 {
     _bShow = !_bShow;
 
+    CenterCursor(_hWnd);
     ShowWindow(_hWnd, (_bShow == TRUE) ? SW_SHOW : SW_HIDE);
     UpdateWindow(_hWnd);
 }
@@ -283,47 +304,43 @@ LRESULT Application::OnMouseWheel(WPARAM wParam, LPARAM lParam)
 
 LRESULT Application::OnMouseMove(WPARAM wParam, LPARAM lParam)
 {
-    D2D1_POINT_2F   pointerPosition;
-    D2D1_SIZE_F     pointerSize;
     D2D1_POINT_2F   position;
-    INT             iCenterX, iCenterY;
+    INT             iClientWidth, iClientHeight;
     INT             iDeltaX, iDeltaY;
     INT             iMinX, iMinY, iMaxX, iMaxY;
-    POINT           ptCenter;
-    RECT            rc;
+    RECT            rcClient;
 
-    pointerSize = _pointer.GetSize();
-    pointerPosition = _pointer.GetPosition();
+    ////////////////////////////////////////////////////////////////
+    // Shifting the pointer position
 
-    GetClientRect(_hWnd, &rc);
+    GetClientRect(_hWnd, &rcClient);
 
-    iCenterX = (rc.right - rc.left) / 2;
-    iCenterY = (rc.bottom - rc.top) / 2;
+    iClientWidth  = rcClient.right - rcClient.left;
+    iClientHeight = rcClient.bottom - rcClient.top;
 
-    iDeltaX = GET_X_LPARAM(lParam) - iCenterX;
-    iDeltaY = GET_Y_LPARAM(lParam) - iCenterY;
+    iDeltaX = GET_X_LPARAM(lParam) - (iClientWidth  / 2);
+    iDeltaY = GET_Y_LPARAM(lParam) - (iClientHeight / 2);
 
-    position.x = pointerPosition.x + (FLOAT) iDeltaX;
-    position.y = pointerPosition.y + (FLOAT) iDeltaY;
+    position.x = _pointer.GetPosition().x + (FLOAT) iDeltaX;
+    position.y = _pointer.GetPosition().y + (FLOAT) iDeltaY;
 
-    iMinX = -pointerSize.width;
-    iMinY = -pointerSize.height;
-    iMaxX = (rc.right - rc.left) + (-iMinX);
-    iMaxY = (rc.bottom - rc.top) + (-iMinY);
+    iMinX = -_pointer.GetSize().width;
+    iMinY = -_pointer.GetSize().height;
+    iMaxX = iClientWidth  + (-iMinX);
+    iMaxY = iClientHeight + (-iMinY);
 
     position.x = fmaxf(iMinX, fminf(position.x, iMaxX));
     position.y = fmaxf(iMinY, fminf(position.y, iMaxY));
 
     _pointer.SetPosition(position);
 
-    ptCenter.x = iCenterX;
-    ptCenter.y = iCenterY;
+    ////////////////////////////////////////////////////////////////
+    // Lock and hide cursor
 
-    ClientToScreen(_hWnd, &ptCenter);
-
-    SetCursorPos(ptCenter.x, ptCenter.y);
+    CenterCursor(_hWnd);
     SetCursor(NULL);
 
+    ////////////////////////////////////////////////////////////////
     return 0;
 }
 
