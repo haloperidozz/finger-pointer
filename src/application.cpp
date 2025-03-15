@@ -275,6 +275,7 @@ LRESULT Application::OnTrayIcon(WPARAM wParam, LPARAM lParam)
     switch (lParam) {
         case WM_RBUTTONUP:
             GetCursorPos(&pt);
+            SetForegroundWindow(_hWnd);
             TrackPopupMenuEx(
                 hMenuTrackPopup,
                 TPM_RIGHTBUTTON,
@@ -284,7 +285,6 @@ LRESULT Application::OnTrayIcon(WPARAM wParam, LPARAM lParam)
                 NULL);
             DestroyMenu(hMenu);
             break;
-        
         case WM_LBUTTONUP:
             ToggleWindowVisibility();
             break;
