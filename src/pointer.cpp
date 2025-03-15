@@ -20,6 +20,8 @@
 
 #include "resource.h"
 
+#define MARKER_SIZE 2.5f
+
 Pointer::Pointer()
     : _tweener(0.25f, -45.0f, 0.0f, Easing::EaseOutCirc),
       _markerColor(D2D1::ColorF::Red),
@@ -123,7 +125,7 @@ VOID Pointer::Draw(ID2D1RenderTarget *pRenderTarget)
 {
     if (_bShowMarker == TRUE) {
         pRenderTarget->FillEllipse(
-            D2D1::Ellipse(_markerPosition, 1.0f, 1.0f), // 1px
+            D2D1::Ellipse(_markerPosition, MARKER_SIZE, MARKER_SIZE),
             _markerBrush);
     }
     
