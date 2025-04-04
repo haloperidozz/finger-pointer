@@ -35,9 +35,9 @@ public:
 
     VOID Invert(BOOL bInvert);
 
-    void SetEasing(PFNEASING pfnEasing);
+    VOID SetEasing(PFNEASING pfnEasing);
 
-    void Reset();
+    VOID Reset();
 
 private:
     FLOAT       _fDuration;

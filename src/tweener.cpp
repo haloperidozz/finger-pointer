@@ -23,13 +23,13 @@ Tweener::Tweener(
     FLOAT       fStart,
     FLOAT       fTarget,
     PFNEASING   pfnEasing)
-    : _fDuration(fDuration),
+    : _pfnEasing((pfnEasing != NULL) ? pfnEasing : Easing::Linear),
+      _fDuration(fDuration),
       _fStart(fStart),
       _fTarget(fTarget),
       _fProgress(0.0f),
       _fValue(fStart),
-      _bInverted(FALSE),
-      _pfnEasing(pfnEasing)
+      _bInverted(FALSE)
 {
 }
 
@@ -53,7 +53,7 @@ BOOL Tweener::Update(FLOAT fDeltaTime)
     return _fProgress < _fDuration;
 }
 
-FLOAT Tweener::GetValue() const
+FLOAT Tweener::GetValue() CONST
 {
     return _fValue;
 }
@@ -63,12 +63,14 @@ VOID Tweener::Invert(BOOL bInvert)
     _bInverted = bInvert;
 }
 
-void Tweener::SetEasing(PFNEASING pfnEasing)
+VOID Tweener::SetEasing(PFNEASING pfnEasing)
 {
-    _pfnEasing = pfnEasing;
+    if (pfnEasing != NULL) {
+        _pfnEasing = pfnEasing;
+    }
 }
 
-void Tweener::Reset()
+VOID Tweener::Reset()
 {
     _fProgress = 0.0f;
     _fValue = _fStart;
