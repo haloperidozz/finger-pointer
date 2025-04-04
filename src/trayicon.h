@@ -35,9 +35,7 @@ public:
     BOOL ShowNotification(LPCTSTR szInfo, LPCTSTR szTitle);
 
 private:
-    HWND    _hWnd;
-    UINT    _uMessage;
-    UINT    _uId;
+    NOTIFYICONDATA _nid;
 };
 
 #endif // __TRAYICON_H

@@ -17,8 +17,8 @@
 #include "trayicon.h"
 
 TrayIcon::TrayIcon()
-    : _hWnd(NULL)
 {
+    ZeroMemory(&_nid, sizeof(NOTIFYICONDATA));
 }
 
 TrayIcon::~TrayIcon()
@@ -28,100 +28,75 @@ TrayIcon::~TrayIcon()
 
 BOOL TrayIcon::Add(HWND hWnd, UINT uMessage, UINT uId)
 {
-    NOTIFYICONDATA nid;
-
-    if (_hWnd != NULL || hWnd == NULL) {
+    if (_nid.hWnd != NULL || hWnd == NULL) {
         return FALSE;
     }
 
-    _hWnd = hWnd;
-    _uMessage = uMessage;
-    _uId = uId;
+    _nid.cbSize           = sizeof(NOTIFYICONDATA);
+    _nid.hWnd             = hWnd;
+    _nid.uCallbackMessage = uMessage;
+    _nid.uID              = uId;
+    _nid.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 
-    nid.cbSize           = sizeof(NOTIFYICONDATA);
-    nid.hWnd             = _hWnd;
-    nid.uID              = _uId;
-    nid.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-    nid.uCallbackMessage = _uMessage;
+    GetWindowText(_nid.hWnd, _nid.szTip, ARRAYSIZE(_nid.szTip));
 
-    GetWindowText(_hWnd, nid.szTip, ARRAYSIZE(nid.szTip));
+    _nid.hIcon = (HICON) GetClassLongPtr(_nid.hWnd, GCLP_HICON);
 
-    nid.hIcon = (HICON) GetClassLongPtr(_hWnd, GCLP_HICON);
-
-    return Shell_NotifyIcon(NIM_ADD, &nid);
+    return Shell_NotifyIcon(NIM_ADD, &_nid);
 }
 
 BOOL TrayIcon::Delete()
 {
-    NOTIFYICONDATA nid;
-
-    if (_hWnd == NULL) {
+    if (_nid.hWnd == NULL) {
         return FALSE;
     }
 
-    nid.cbSize = sizeof(NOTIFYICONDATA);
-    nid.hWnd   = _hWnd;
-    nid.uID    = _uId;
-
-    if (Shell_NotifyIcon(NIM_DELETE, &nid) == TRUE) {
-        _hWnd = NULL;
-        return TRUE;
+    if (Shell_NotifyIcon(NIM_DELETE, &_nid) == FALSE) {
+        return FALSE;
     }
-
-    return FALSE;
+    
+    ZeroMemory(&_nid, sizeof(NOTIFYICONDATA));
+    
+    return TRUE;
 }
 
 BOOL TrayIcon::UpdateIcon(HICON hIcon)
 {
-    NOTIFYICONDATA nid;
-
-    if (_hWnd == NULL) {
+    if (_nid.hWnd == NULL) {
         return FALSE;
     }
 
-    nid.cbSize = sizeof(NOTIFYICONDATA);
-    nid.hWnd   = _hWnd;
-    nid.uID    = _uId;
-    nid.uFlags = NIF_ICON;
-    nid.hIcon  = hIcon;
+    _nid.uFlags = NIF_ICON;
+    _nid.hIcon  = hIcon;
 
-    return Shell_NotifyIcon(NIM_MODIFY, &nid);
+    return Shell_NotifyIcon(NIM_MODIFY, &_nid);
 }
 
 BOOL TrayIcon::UpdateTooltip(LPCTSTR szTooltip)
 {
-    NOTIFYICONDATA nid;
 
-    if (_hWnd == NULL) {
+    if (_nid.hWnd == NULL) {
         return FALSE;
     }
 
-    nid.cbSize = sizeof(NOTIFYICONDATA);
-    nid.hWnd   = _hWnd;
-    nid.uID    = _uId;
-    nid.uFlags = NIF_TIP;
+    _nid.uFlags = NIF_TIP;
 
-    lstrcpyn(nid.szTip, szTooltip, ARRAYSIZE(nid.szTip));
+    lstrcpyn(_nid.szTip, szTooltip, ARRAYSIZE(_nid.szTip));
 
-    return Shell_NotifyIcon(NIM_MODIFY, &nid);
+    return Shell_NotifyIcon(NIM_MODIFY, &_nid);
 }
 
 BOOL TrayIcon::ShowNotification(LPCTSTR szInfo, LPCTSTR szTitle)
 {
-    NOTIFYICONDATA nid;
-
-    if (_hWnd == NULL) {
+    if (_nid.hWnd == NULL) {
         return FALSE;
     }
 
-    nid.cbSize = sizeof(NOTIFYICONDATA);
-    nid.hWnd   = _hWnd;
-    nid.uID    = _uId;
-    nid.uFlags = NIF_INFO;
-    nid.dwInfoFlags = NIIF_NONE;
+    _nid.uFlags      = NIF_INFO;
+    _nid.dwInfoFlags = NIIF_NONE;
 
-    lstrcpyn(nid.szInfo, szInfo, ARRAYSIZE(nid.szInfo));
-    lstrcpyn(nid.szInfoTitle, szTitle, ARRAYSIZE(nid.szInfoTitle));
+    lstrcpyn(_nid.szInfo, szInfo, ARRAYSIZE(_nid.szInfo));
+    lstrcpyn(_nid.szInfoTitle, szTitle, ARRAYSIZE(_nid.szInfoTitle));
 
-    return Shell_NotifyIcon(NIM_MODIFY, &nid);
+    return Shell_NotifyIcon(NIM_MODIFY, &_nid);
 }
