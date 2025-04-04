@@ -20,7 +20,7 @@
 #include <Windows.h>
 
 template<class Interface>
-inline void SafeRelease(Interface** ppInterfaceToRelease)
+inline VOID SafeRelease(Interface** ppInterfaceToRelease)
 {
     if (*ppInterfaceToRelease != NULL) {
         (*ppInterfaceToRelease)->Release();
@@ -29,7 +29,7 @@ inline void SafeRelease(Interface** ppInterfaceToRelease)
 }
 
 template<class Pointer>
-inline void SafeDelete(Pointer** ppPointerToDelete)
+inline VOID SafeDelete(Pointer** ppPointerToDelete)
 {
     if (*ppPointerToDelete != NULL) {
         delete (*ppPointerToDelete);

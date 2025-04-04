@@ -22,7 +22,7 @@ Timer::Timer()
     Reset();
 }
 
-void Timer::Tick()
+VOID Timer::Tick()
 {
     LONGLONG llElapsed;
 
@@ -32,7 +32,7 @@ void Timer::Tick()
     _lastCount = _currentCount;
 }
 
-FLOAT Timer::GetDeltaTime() const
+FLOAT Timer::GetDeltaTime() CONST
 {
     return _fDeltaTime;
 }

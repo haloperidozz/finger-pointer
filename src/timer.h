@@ -23,7 +23,7 @@ class Timer {
 public:
     Timer();
 
-    void Tick();
+    VOID Tick();
 
     FLOAT GetDeltaTime() CONST;
 

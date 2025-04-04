@@ -411,10 +411,10 @@ LRESULT Application::OnDestroy(WPARAM wParam, LPARAM lParam)
 ////////////////////////////////////////////////////////////////////////////
 
 LRESULT CALLBACK Application::WndProc(
-    HWND hWnd,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam)
+    HWND    hWnd,
+    UINT    uMsg,
+    WPARAM  wParam,
+    LPARAM  lParam)
 {
     Application*    pThis = NULL;
     LPCREATESTRUCT  pcs = NULL;

@@ -37,10 +37,10 @@ public:
 
 private:
     static LRESULT CALLBACK WndProc(
-        HWND hWnd,
-        UINT uMsg,
-        WPARAM wParam,
-        LPARAM lParam);
+        HWND    hWnd,
+        UINT    uMsg,
+        WPARAM  wParam,
+        LPARAM  lParam);
 
     VOID ToggleWindowVisibility();
 

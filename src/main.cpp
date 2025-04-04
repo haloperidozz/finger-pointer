@@ -21,10 +21,10 @@
 #include "application.h"
 
 INT APIENTRY _tWinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    PTSTR lpCmdLine,
-    INT nCmdShow)
+    HINSTANCE   hInstance,
+    HINSTANCE   hPrevInstance,
+    PTSTR       lpCmdLine,
+    INT         nCmdShow)
 {
     HANDLE      hMutex = NULL;
     Application application;
