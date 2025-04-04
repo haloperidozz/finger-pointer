@@ -19,8 +19,8 @@
 #include <windowsx.h>
 #include <d2d1helper.h>
 
-#include "resourcex.h"
 #include "safemem.h"
+#include "resource.h"
 
 Sprite::Sprite()
     : _pBitmap(NULL),

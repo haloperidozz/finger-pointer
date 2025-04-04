@@ -18,8 +18,8 @@
 
 #include <Shlwapi.h>
 
-#include "resourcex.h"
 #include "safemem.h"
+#include "resource.h"
 
 #if __MINGW32__
 

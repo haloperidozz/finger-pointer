@@ -36,3 +36,80 @@
 #define IDM_ITEM_TIKTOK         502
 #define IDM_ITEM_TELEGRAM       503
 #define IDM_ITEM_EXIT           504
+
+////////////////////////////////////////////////////////////////////////////
+
+#ifndef RC_INVOKED
+
+#ifndef __RESOURCE_H
+#define __RESOURCE_H
+
+#include <Shlwapi.h>
+
+static LPVOID LoadResourceToMemory(
+    HINSTANCE   hInstance,
+    LPCTSTR     lpszName,
+    LPCTSTR     lpszType,
+    LPDWORD     lpdwSize)
+{
+    HRSRC   hResource = NULL;
+    HGLOBAL hResourceData = NULL;
+    DWORD   dwResourceSize;
+
+    if (lpszName == NULL || lpszType == NULL) {
+        return NULL;
+    }
+
+    hResource = FindResource(hInstance, lpszName, lpszType);
+
+    if (hResource == NULL) {
+        return NULL;
+    }
+
+    dwResourceSize = SizeofResource(hInstance, hResource);
+
+    if (dwResourceSize <= 0) {
+        return NULL;
+    }
+
+    hResourceData = LoadResource(hInstance, hResource);
+
+    if (hResourceData == NULL) {
+        return NULL;
+    }
+
+    *lpdwSize = dwResourceSize;
+
+    return LockResource(hResourceData);
+}
+
+static IStream* CreateIStreamFromResource(
+    HINSTANCE   hInstance,
+    LPCTSTR     lpszName,
+    LPCTSTR     lpszType)
+{
+    BYTE* pbResourceData = NULL;
+    DWORD dwResourceSize = 0;
+
+    if (lpszName == NULL || lpszType == NULL) {
+        return NULL;
+    }
+
+    pbResourceData = (BYTE*) LoadResourceToMemory(
+        hInstance,
+        lpszName,
+        lpszType,
+        &dwResourceSize);
+    
+    if (pbResourceData == NULL) {
+        return NULL;
+    }
+
+    return SHCreateMemStream(pbResourceData, dwResourceSize);
+}
+
+#endif // __RESOURCE_H
+
+#endif // RC_INVOKED
+
+////////////////////////////////////////////////////////////////////////////
